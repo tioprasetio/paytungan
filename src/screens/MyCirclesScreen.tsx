@@ -1,0 +1,555 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  TextInput,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { useAuthStore } from '../stores';
+import { useCircle } from '../hooks';
+import { jastipApi } from '../api';
+import { JastipSession } from '../types';
+import { Header, Card, Button, AvatarStack } from '../components/common';
+import { Colors } from '../theme/colors';
+import { Plus, KeyRound, Search, ChevronRight, X } from 'lucide-react-native';
+
+const CIRCLE_THEMES = [
+  { bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
+  { bg: '#F0FDF4', border: '#BBF7D0', text: '#16A34A' },
+  { bg: '#FFF7ED', border: '#FED7AA', text: '#EA580C' },
+  { bg: '#FAF5FF', border: '#E9D5FF', text: '#9333EA' },
+  { bg: '#ECFEFF', border: '#A5F3FC', text: '#0891B2' },
+];
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'MyCircles'>;
+type FilterTab = 'ALL' | 'OWNER' | 'MEMBER';
+
+export const MyCirclesScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const { currentUser } = useAuthStore();
+  const { circles, fetchUserCircles } = useCircle(currentUser?.id);
+
+  const [activeSessions, setActiveSessions] = useState<JastipSession[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    if (!currentUser?.id) return;
+    try {
+      setRefreshing(true);
+      await fetchUserCircles();
+      const sessions = await jastipApi.getUserActiveSessions(currentUser.id);
+      setActiveSessions(sessions);
+    } catch (err) {
+      console.warn('Failed to refresh circles:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [currentUser?.id, fetchUserCircles]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  const ownerCirclesCount = useMemo(() => {
+    return circles.filter((c) =>
+      c.members?.some((m) => m.userId === currentUser?.id && m.role === 'OWNER')
+    ).length;
+  }, [circles, currentUser?.id]);
+
+  const memberCirclesCount = circles.length - ownerCirclesCount;
+
+  // Filter based on tab and search query
+  const filteredCircles = useMemo(() => {
+    return circles.filter((c) => {
+      const isOwner = c.members?.some(
+        (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+      );
+
+      // Tab filter
+      if (activeTab === 'OWNER' && !isOwner) return false;
+      if (activeTab === 'MEMBER' && isOwner) return false;
+
+      // Search filter (name or join code)
+      if (searchQuery.trim().length > 0) {
+        const query = searchQuery.toLowerCase().trim();
+        const matchName = c.nama_sirkel.toLowerCase().includes(query);
+        const matchCode = c.kode_join.toLowerCase().includes(query);
+        return matchName || matchCode;
+      }
+
+      return true;
+    });
+  }, [circles, activeTab, searchQuery, currentUser?.id]);
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <Header
+        title="Sirkel Saya"
+        subtitle={`${circles.length} sirkel terdaftar`}
+        onBack={() => navigation.goBack()}
+      />
+
+      <View style={styles.container}>
+        {/* Search Input */}
+        <View style={styles.searchBar}>
+          <Search size={16} color={Colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari nama sirkel atau kode join..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <X size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Filter Pills */}
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabPill, activeTab === 'ALL' && styles.tabPillActive]}
+            onPress={() => setActiveTab('ALL')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'ALL' && styles.tabTextActive]}>
+              Semua ({circles.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabPill, activeTab === 'OWNER' && styles.tabPillActive]}
+            onPress={() => setActiveTab('OWNER')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'OWNER' && styles.tabTextActive]}>
+              Owner ({ownerCirclesCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabPill, activeTab === 'MEMBER' && styles.tabPillActive]}
+            onPress={() => setActiveTab('MEMBER')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'MEMBER' && styles.tabTextActive]}>
+              Anggota ({memberCirclesCount})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionRow}>
+          <Button
+            title="Buat Sirkel"
+            icon={<Plus size={14} color="#FFFFFF" />}
+            variant="primary"
+            size="sm"
+            onPress={() => navigation.navigate('CreateCircle')}
+            style={styles.actionBtn}
+          />
+          <Button
+            title="Gabung Kode"
+            icon={<KeyRound size={14} color={Colors.primary} />}
+            variant="secondary"
+            size="sm"
+            onPress={() => navigation.navigate('JoinCircle')}
+            style={styles.actionBtn}
+          />
+        </View>
+
+        {/* List of Circles */}
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
+        >
+          {filteredCircles.length === 0 ? (
+            <Card style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>
+                {searchQuery.trim().length > 0
+                  ? 'Sirkel Tidak Ditemukan'
+                  : activeTab === 'OWNER'
+                    ? 'Belum Ada Sirkel Buatanmu'
+                    : activeTab === 'MEMBER'
+                      ? 'Belum Ada Sirkel yang Diikuti'
+                      : 'Belum Punya Sirkel'}
+              </Text>
+              <Text style={styles.emptyText}>
+                {searchQuery.trim().length > 0
+                  ? `Tidak ada sirkel yang cocok dengan kata kunci "${searchQuery}".`
+                  : 'Buat sirkel baru untuk mulai belanja bareng teman atau minta kode join.'}
+              </Text>
+            </Card>
+          ) : (
+            filteredCircles.map((circle, index) => {
+              const isOwner = circle.members?.some(
+                (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+              );
+              const theme = CIRCLE_THEMES[index % CIRCLE_THEMES.length];
+              const hasActiveJastip = activeSessions.some(
+                (s) => s.circleId === circle.id && s.status === 'OPEN'
+              );
+
+              return (
+                <TouchableOpacity
+                  key={circle.id}
+                  style={styles.upgradedCard}
+                  onPress={() =>
+                    navigation.navigate('CircleDetail', {
+                      circleId: circle.id,
+                      circleName: circle.nama_sirkel,
+                    })
+                  }
+                  activeOpacity={0.85}
+                >
+                  {/* Top Row: Avatar, Names, Badges, Code */}
+                  <View style={styles.cardHeaderRow}>
+                    <View
+                      style={[
+                        styles.avatarBox,
+                        { backgroundColor: theme.bg, borderColor: theme.border },
+                      ]}
+                    >
+                      <Text style={[styles.avatarText, { color: theme.text }]}>
+                        {circle.nama_sirkel.charAt(0).toUpperCase()}
+                      </Text>
+                      {hasActiveJastip && <View style={styles.activeDotBadge} />}
+                    </View>
+
+                    <View style={styles.cardMainInfo}>
+                      <View style={styles.titleCodeRow}>
+                        <Text style={styles.upgradedTitle} numberOfLines={1}>
+                          {circle.nama_sirkel}
+                        </Text>
+                        <View style={styles.codePill}>
+                          <Text style={styles.codePillHash}>#</Text>
+                          <Text style={styles.codePillText}>{circle.kode_join}</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.subMetaRow}>
+                        <View style={isOwner ? styles.ownerBadge : styles.memberBadge}>
+                          <Text
+                            style={isOwner ? styles.ownerBadgeText : styles.memberBadgeText}
+                          >
+                            {isOwner ? '👑 Owner' : '👥 Anggota'}
+                          </Text>
+                        </View>
+
+                        {hasActiveJastip && (
+                          <View style={styles.jastipActivePill}>
+                            <View style={styles.jastipActiveDot} />
+                            <Text style={styles.jastipActiveText}>Jastip Buka</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Bottom Row: Avatars & Clean Action Pill */}
+                  <View style={styles.cardFooterRow}>
+                    <View style={styles.footerLeft}>
+                      <AvatarStack
+                        users={
+                          circle.members?.map((m) => ({
+                            id: m.userId,
+                            name: m.user?.nama || 'Teman',
+                          })) || []
+                        }
+                        size={26}
+                        maxDisplay={3}
+                        showAddButton={false}
+                      />
+                      <Text style={styles.memberCountLabel}>
+                        {circle.members?.length || 1} Teman
+                      </Text>
+                    </View>
+
+                    <View style={styles.enterPill}>
+                      <Text style={styles.enterPillText}>Buka Sirkel</Text>
+                      <ChevronRight size={14} color={Colors.primary} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    paddingVertical: 0,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  tabPill: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  tabPillActive: {
+    backgroundColor: Colors.primaryLight || '#EEF2FF',
+    borderColor: Colors.primary,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  tabTextActive: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
+  actionBtn: {
+    flex: 1,
+  },
+  listContent: {
+    paddingBottom: 30,
+  },
+  emptyCard: {
+    padding: 30,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  upgradedCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    position: 'relative',
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  activeDotBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  cardMainInfo: {
+    flex: 1,
+  },
+  titleCodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  upgradedTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  codePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  codePillHash: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    marginRight: 1,
+  },
+  codePillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.5,
+  },
+  subMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 6,
+  },
+  ownerBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  ownerBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  memberBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  memberBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  jastipActivePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    gap: 4,
+  },
+  jastipActiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#059669',
+  },
+  jastipActiveText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  cardFooterRow: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    paddingTop: 10,
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  memberCountLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  enterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F5FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 2,
+  },
+  enterPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+});
