@@ -9,5 +9,8 @@ export type RootStackParamList = {
   InputPrices: { sessionId: number; lokasi: string };
   SplitBillRecap: { sessionId: number; lokasi: string };
   Settings: undefined;
+  EditProfile: undefined;
+  PaymentSettings: undefined;
+  SecuritySettings: undefined;
   MyCircles: undefined;
 };

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,24 @@ import { useAuthStore } from '../stores';
 import { useCircle } from '../hooks';
 import { jastipApi } from '../api';
 import { JastipSession } from '../types';
-import { Card, Badge, Button, AvatarStack } from '../components/common';
-import { Colors } from '../theme/colors';
-import { useAlert } from '../context/AlertContext';
-import { Plus, KeyRound, Search, ChevronRight, CreditCard, LocationEdit } from 'lucide-react-native';
+import { Badge, AvatarStack } from '../components/common';
+import { useThemeColors, ThemeColors } from '../theme/colors';
+import {
+  Plus,
+  KeyRound,
+  Search,
+  ChevronRight,
+  CreditCard,
+  MapPin,
+  Clock,
+  ArrowUpRight,
+  ShoppingBag,
+  Users,
+  X,
+  Receipt,
+  CheckCircle2,
+  Settings,
+} from 'lucide-react-native';
 
 const CIRCLE_THEMES = [
   { bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
@@ -32,57 +46,52 @@ const CIRCLE_THEMES = [
 ];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = Math.min(330, SCREEN_WIDTH - 56);
+const CARD_WIDTH = Math.min(324, SCREEN_WIDTH - 52);
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { currentUser, logout } = useAuthStore();
-  const { showConfirm } = useAlert();
+  const { currentUser } = useAuthStore();
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const { circles, fetchUserCircles } = useCircle(currentUser?.id);
 
   const [activeSessions, setActiveSessions] = useState<JastipSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = useCallback(async () => {
-    if (!currentUser?.id) return;
-    try {
-      setRefreshing(true);
-      await fetchUserCircles();
-      const sessions = await jastipApi.getUserActiveSessions(currentUser.id);
-      setActiveSessions(sessions);
-    } catch (err) {
-      console.warn('Failed to load active runs:', err);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [currentUser?.id, fetchUserCircles]);
+  const loadData = useCallback(
+    async (isPullToRefresh: boolean = false) => {
+      if (!currentUser?.id) return;
+      try {
+        if (isPullToRefresh) {
+          setRefreshing(true);
+        }
+        await Promise.all([
+          fetchUserCircles(),
+          jastipApi.getUserActiveSessions(currentUser.id).then(sessions => {
+            setActiveSessions(sessions);
+          }),
+        ]);
+      } catch (err) {
+        console.warn('Failed to load active runs:', err);
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    [currentUser?.id, fetchUserCircles],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
-    }, [loadData])
+      loadData(false);
+    }, [loadData]),
   );
 
-  const handleLogout = () => {
-    showConfirm(
-      'Keluar dari Aplikasi?',
-      'Apakah kamu yakin ingin keluar dari akun PayTungan?',
-      () => {
-        logout();
-      },
-      undefined,
-      'Keluar',
-      'Batal',
-      true
-    );
-  };
-
   const filteredSessions = activeSessions
-    .filter((s) => s.status === 'OPEN' || s.status === 'LOCKED')
-    .filter((s) => {
+    .filter(s => s.status === 'OPEN' || s.status === 'LOCKED')
+    .filter(s => {
       const query = searchQuery.toLowerCase();
       return (
         s.lokasi?.toLowerCase().includes(query) ||
@@ -91,165 +100,243 @@ export const HomeScreen: React.FC = () => {
       );
     });
 
-  const renderErrandCard = (session: JastipSession, isFullWidth: boolean = false) => {
+  const renderErrandCard = (
+    session: JastipSession,
+    isFullWidth: boolean = false,
+  ) => {
     const isBuyer = session.creatorId === currentUser?.id;
     const isOpen = session.status === 'OPEN';
-    const isExpired = !!session.waktu_tutup && new Date(session.waktu_tutup).getTime() < Date.now();
+    const isExpired =
+      !!session.waktu_tutup &&
+      new Date(session.waktu_tutup).getTime() < Date.now();
     const itemCount = session.items?.length || 0;
     const totalSpending =
-      session.items?.reduce((acc, item) => acc + (item.harga_final || 0), 0) || 0;
+      session.items?.reduce((acc, item) => acc + (item.harga_final || 0), 0) ||
+      0;
 
     // Split bill & payment calculations
-    const myItems = session.items?.filter((i) => i.userId === currentUser?.id) || [];
+    const myItems =
+      session.items?.filter(i => i.userId === currentUser?.id) || [];
     const myPricedItems = myItems.filter(
-      (i) => i.harga_final !== null && i.harga_final !== undefined
+      i => i.harga_final !== null && i.harga_final !== undefined,
     );
     const myTotalBill =
       myPricedItems.reduce((acc, i) => acc + (i.harga_final || 0), 0) +
-      (myItems.length > 0 ? (session.tarif_jastip || 0) : 0);
-    const isMyAllPaid = myItems.length > 0 && myItems.every((i) => i.status_bayar);
-    const myProof = session.payment_proofs?.find((p) => p.userId === currentUser?.id);
+      (myItems.length > 0 ? session.tarif_jastip || 0 : 0);
+    const isMyAllPaid =
+      myItems.length > 0 && myItems.every(i => i.status_bayar);
+    const myProof = session.payment_proofs?.find(
+      p => p.userId === currentUser?.id,
+    );
     const pendingProofsCount =
-      session.payment_proofs?.filter((p) => p.status === 'PENDING').length || 0;
+      session.payment_proofs?.filter(p => p.status === 'PENDING').length || 0;
     const hasUnpricedItems = session.items?.some(
-      (i) => i.harga_final === null || i.harga_final === undefined
+      i => i.harga_final === null || i.harga_final === undefined,
     );
 
-    // Determine smart action button properties & direct routing
+    // Smart Action configuration without emojis
     let actionText = '';
-    let actionBtnStyle: any = styles.buyerActionBtn;
-    let actionTextStyle: any = styles.primaryActionText;
+    let actionBtnStyle: any = styles.actionBtnPrimary;
+    let actionTextStyle: any = styles.actionTextLight;
+    let ActionIcon: any = ShoppingBag;
     let onActionPress = () => {
-      navigation.navigate('JastipSession', { sessionId: session.id, lokasi: session.lokasi });
+      navigation.navigate('JastipSession', {
+        sessionId: session.id,
+        lokasi: session.lokasi,
+      });
     };
 
     if (isBuyer) {
       if (isOpen) {
-        actionText = isExpired
-          ? 'Kunci Keranjang (Waktu Habis)'
-          : 'Buka Keranjang (Kamu Yang Jajan)';
-        actionBtnStyle = styles.buyerActionBtn;
+        actionText = isExpired ? 'Kunci Keranjang' : 'Buka Keranjang Kamu';
+        actionBtnStyle = styles.actionBtnPrimary;
+        ActionIcon = ShoppingBag;
         onActionPress = () =>
-          navigation.navigate('JastipSession', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('JastipSession', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (hasUnpricedItems) {
-        actionText = '📝 Input Harga Struk Kasir';
-        actionBtnStyle = styles.buyerActionBtn;
+        actionText = 'Input Harga Struk';
+        actionBtnStyle = styles.actionBtnAmber;
+        ActionIcon = Receipt;
         onActionPress = () =>
-          navigation.navigate('InputPrices', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('InputPrices', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (pendingProofsCount > 0) {
-        actionText = `⚡ ${pendingProofsCount} Bukti Bayar - Konfirmasi!`;
-        actionBtnStyle = styles.pendingActionBtn;
+        actionText = `${pendingProofsCount} Bukti Perlu Dikonfirmasi`;
+        actionBtnStyle = styles.actionBtnAmber;
+        ActionIcon = Clock;
         onActionPress = () =>
-          navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('SplitBillRecap', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else {
-        actionText = '🧾 Cek Split Bill & Rekap';
-        actionBtnStyle = styles.recapActionBtn;
+        actionText = 'Lihat Rekap Split Bill';
+        actionBtnStyle = styles.actionBtnSecondary;
+        actionTextStyle = styles.actionTextDark;
+        ActionIcon = Receipt;
         onActionPress = () =>
-          navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('SplitBillRecap', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       }
     } else {
       // Penitip
       if (isOpen) {
-        actionText = isExpired ? 'Waktu Habis (Lihat Titipan)' : '+ Titip Barang Sekarang';
-        actionBtnStyle = styles.requesterActionBtn;
+        actionText = isExpired ? 'Waktu Habis (Lihat)' : '+ Titip Barang';
+        actionBtnStyle = styles.actionBtnPrimary;
+        ActionIcon = Plus;
         onActionPress = () =>
-          navigation.navigate('JastipSession', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('JastipSession', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (myItems.length === 0) {
-        actionText = '👀 Pantau Belanjaan Sirkel';
-        actionBtnStyle = styles.secondaryActionBtn;
-        actionTextStyle = styles.secondaryActionText;
+        actionText = 'Pantau Belanjaan Sirkel';
+        actionBtnStyle = styles.actionBtnSubtle;
+        actionTextStyle = styles.actionTextMuted;
+        ActionIcon = Users;
         onActionPress = () =>
-          navigation.navigate('JastipSession', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('JastipSession', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (hasUnpricedItems) {
-        actionText = '⏳ Menunggu Struk Kasir';
-        actionBtnStyle = styles.waitingActionBtn;
-        actionTextStyle = styles.waitingActionText;
+        actionText = 'Menunggu Struk Belanja';
+        actionBtnStyle = styles.actionBtnSubtle;
+        actionTextStyle = styles.actionTextMuted;
+        ActionIcon = Clock;
         onActionPress = () =>
-          navigation.navigate('JastipSession', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('JastipSession', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (isMyAllPaid) {
-        actionText = '✅ Lunas (Lihat Rincian)';
-        actionBtnStyle = styles.paidActionBtn;
-        actionTextStyle = styles.paidActionText;
+        actionText = 'Lunas • Lihat Rincian';
+        actionBtnStyle = styles.actionBtnGreenLight;
+        actionTextStyle = styles.actionTextGreenDark;
+        ActionIcon = CheckCircle2;
         onActionPress = () =>
-          navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('SplitBillRecap', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (myProof?.status === 'PENDING') {
-        actionText = '⏳ Bukti Terkirim (Menunggu Konfirmasi)';
-        actionBtnStyle = styles.waitingProofActionBtn;
-        actionTextStyle = styles.waitingProofActionText;
+        actionText = 'Bukti Terkirim (Menunggu)';
+        actionBtnStyle = styles.actionBtnAmberLight;
+        actionTextStyle = styles.actionTextAmberDark;
+        ActionIcon = Clock;
         onActionPress = () =>
-          navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('SplitBillRecap', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else if (myProof?.status === 'REJECTED') {
-        actionText = `❌ Bukti Ditolak - Upload Ulang (Rp ${myTotalBill.toLocaleString('id-ID')})`;
-        actionBtnStyle = styles.rejectedActionBtn;
+        actionText = `Upload Ulang Bukti (Rp ${myTotalBill.toLocaleString(
+          'id-ID',
+        )})`;
+        actionBtnStyle = styles.actionBtnRedLight;
+        actionTextStyle = styles.actionTextRedDark;
+        ActionIcon = CreditCard;
         onActionPress = () =>
-          navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('SplitBillRecap', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       } else {
-        // Ready to pay & upload proof!
-        actionText = `💳 Bayar & Upload Bukti (Rp ${myTotalBill.toLocaleString('id-ID')})`;
-        actionBtnStyle = styles.payActionBtn;
+        actionText = `Bayar Tagihan (Rp ${myTotalBill.toLocaleString(
+          'id-ID',
+        )})`;
+        actionBtnStyle = styles.actionBtnEmerald;
+        ActionIcon = CreditCard;
         onActionPress = () =>
-          navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+          navigation.navigate('SplitBillRecap', {
+            sessionId: session.id,
+            lokasi: session.lokasi,
+          });
       }
     }
 
     const handleCardPress = () => {
       if (!isOpen && !hasUnpricedItems) {
-        navigation.navigate('SplitBillRecap', { sessionId: session.id, lokasi: session.lokasi });
+        navigation.navigate('SplitBillRecap', {
+          sessionId: session.id,
+          lokasi: session.lokasi,
+        });
       } else {
-        navigation.navigate('JastipSession', { sessionId: session.id, lokasi: session.lokasi });
+        navigation.navigate('JastipSession', {
+          sessionId: session.id,
+          lokasi: session.lokasi,
+        });
       }
     };
 
     return (
-      <Card
+      <TouchableOpacity
         key={session.id}
         style={[
           styles.errandCard,
           isFullWidth ? styles.errandCardFull : styles.errandCardCarousel,
         ]}
         onPress={handleCardPress}
+        activeOpacity={0.92}
       >
+        {/* Card Header: Store Location & Status Badge */}
         <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderInfo}>
-            <Text style={styles.errandName} numberOfLines={1}>
-              <LocationEdit size={15} color={Colors.textMuted} /> {session.lokasi}
-            </Text>
-            <Text style={styles.circleSubText} numberOfLines={1}>
-              Sirkel: <Text style={styles.boldText}>{session.circle?.nama_sirkel || 'Grup'}</Text>
-            </Text>
+          <View style={styles.locationWrap}>
+            <View style={styles.locationIconSquircle}>
+              <MapPin size={15} color={colors.primary} />
+            </View>
+            <View style={styles.locationTextWrap}>
+              <Text style={styles.errandName} numberOfLines={1}>
+                {session.lokasi}
+              </Text>
+              <Text style={styles.circleSubText} numberOfLines={1}>
+                {session.circle?.nama_sirkel || 'Grup Sirkel'}
+              </Text>
+            </View>
           </View>
           <Badge status={session.status} />
         </View>
 
+        {/* Runner & Tariff Row */}
         <View style={styles.runnerAndFeeRow}>
           <View style={[styles.runnerBadge, isBuyer && styles.runnerBadgeSelf]}>
             <Text
               style={[styles.runnerText, isBuyer && styles.runnerTextSelf]}
               numberOfLines={1}
-              ellipsizeMode="tail"
             >
-              Yang Jajan: {session.creator?.nama}{isBuyer ? ' (Kamu)' : ''}
+              Belanja:{' '}
+              <Text style={styles.runnerBoldText}>{session.creator?.nama}</Text>
+              {isBuyer ? ' (Kamu)' : ''}
             </Text>
           </View>
           <View style={styles.feeTag}>
             <Text style={styles.feeTagText}>
-              Jastip: Rp {(session.tarif_jastip || 0).toLocaleString('id-ID')}
+              + Jastip Rp {(session.tarif_jastip || 0).toLocaleString('id-ID')}
             </Text>
           </View>
         </View>
 
+        {/* Social Proof & Spend Box */}
         <View style={styles.socialAndSpendRow}>
           <View style={styles.socialBox}>
             <AvatarStack
               users={[
                 { name: session.creator?.nama },
-                ...(session.items?.map((i) => ({ name: i.user?.nama })) || []),
+                ...(session.items?.map(i => ({ name: i.user?.nama })) || []),
               ]}
               maxDisplay={3}
-              size={28}
+              size={26}
+              showAddButton={false}
             />
             <Text style={styles.itemCountText}>
-              {itemCount > 0 ? `${itemCount} barang` : '0 barang'}
+              {itemCount > 0 ? `${itemCount} titipan` : 'Belum ada titip'}
             </Text>
           </View>
 
@@ -259,179 +346,233 @@ export const HomeScreen: React.FC = () => {
               {totalSpending > 0
                 ? `Rp ${totalSpending.toLocaleString('id-ID')}`
                 : isOpen
-                  ? isExpired
-                    ? 'Waktu titip habis'
-                    : 'Masih bisa nitip nih'
-                  : 'Menunggu struk'}
+                ? isExpired
+                  ? 'Waktu habis'
+                  : 'Bisa nitip'
+                : 'Menunggu struk'}
             </Text>
           </View>
         </View>
 
+        {/* Tactile Action Button */}
         <TouchableOpacity
           style={[styles.primaryActionBtn, actionBtnStyle]}
           onPress={onActionPress}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <Text style={[styles.primaryActionText, actionTextStyle]}>{actionText}</Text>
+          <ActionIcon
+            size={14}
+            color={actionTextStyle.color || '#FFFFFF'}
+            style={styles.btnIcon}
+          />
+          <Text
+            style={[styles.primaryActionText, actionTextStyle]}
+            numberOfLines={1}
+          >
+            {actionText}
+          </Text>
         </TouchableOpacity>
-      </Card>
+      </TouchableOpacity>
     );
   };
 
+  // Urgent alerts for 1-Tap Resolution
+  const runnerPendingSession = activeSessions.find(
+    s =>
+      s.creatorId === currentUser?.id &&
+      s.payment_proofs?.some(p => p.status === 'PENDING'),
+  );
+
+  const penitipUnpaidSession = activeSessions.find(s => {
+    if (s.creatorId === currentUser?.id || s.status !== 'LOCKED') return false;
+    const items = s.items?.filter(i => i.userId === currentUser?.id) || [];
+    if (items.length === 0) return false;
+    const allPriced = items.every(
+      i => i.harga_final !== null && i.harga_final !== undefined,
+    );
+    const notAllPaid = items.some(i => !i.status_bayar);
+    const proof = s.payment_proofs?.find(p => p.userId === currentUser?.id);
+    return allPriced && notAllPaid && proof?.status !== 'PENDING';
+  });
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Opsi 2: Card Profile di Kiri & Settings Icon di Kanan */}
       <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoP}>P</Text>
+        <TouchableOpacity
+          style={styles.profileSnippet}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarInitial}>
+              {currentUser?.nama?.charAt(0).toUpperCase() || 'U'}
+            </Text>
           </View>
-          <Text style={styles.brandTitle}>PayTungan</Text>
-        </View>
+          <View style={styles.profileTextWrap}>
+            <Text style={styles.greetingMini}>Hallo,</Text>
+            <Text style={styles.profileName} numberOfLines={1}>
+              {currentUser?.nama || 'User'} 👋
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.userProfileBtn}
+          style={styles.settingsIconBtn}
           onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.7}
+          activeOpacity={0.75}
         >
-          <Text style={styles.userInitial}>
-            {currentUser?.nama?.charAt(0).toUpperCase() || 'U'}
-          </Text>
+          <Settings size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadData(true)}
+            tintColor={colors.primary}
+          />
+        }
       >
-        <View style={styles.greetingSection}>
-          <Text style={styles.screenHeading}>Sesi Jastip Aktif</Text>
-          <Text style={styles.screenSub}>
-            Titip belanja bareng teman sirkel & split bill otomatis
-          </Text>
-        </View>
-
+        {/* Floating Search Bar (hairline border + subtle shadow) */}
         <View style={styles.searchBar}>
-          <Search size={15} color={Colors.textMuted} style={styles.searchIcon} />
+          <Search
+            size={16}
+            color={colors.textMuted}
+            style={styles.searchIcon}
+          />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari sesi jastip, toko, atau teman..."
-            placeholderTextColor={Colors.textMuted}
+            placeholder="Cari sesi jastip, toko, teman..."
+            placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <View style={styles.quickActions}>
-          <Button
-            title="Buat Sirkel Baru"
-            icon={<Plus size={15} color="#FFFFFF" />}
-            variant="primary"
-            size="sm"
+        {/* Quick Command Dock (Replaces generic 50/50 buttons) */}
+        <View style={styles.quickDock}>
+          <TouchableOpacity
+            style={styles.quickDockCardPrimary}
             onPress={() => navigation.navigate('CreateCircle')}
-            style={styles.createGroupBtn}
-          />
-          <Button
-            title="Gabung Kode Sirkel"
-            icon={<KeyRound size={15} color={Colors.primary} />}
-            variant="secondary"
-            size="sm"
+            activeOpacity={0.88}
+          >
+            <View style={styles.quickIconCircleWhite}>
+              <Plus size={16} color={colors.primary} />
+            </View>
+            <View style={styles.quickDockInfo}>
+              <Text style={styles.quickDockTitleLight}>Buat Sirkel</Text>
+              <Text style={styles.quickDockSubLight}>Mulai grup belanja</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickDockCardSecondary}
             onPress={() => navigation.navigate('JoinCircle')}
-            style={styles.joinGroupBtn}
-          />
+            activeOpacity={0.88}
+          >
+            <View style={styles.quickIconCircleIndigo}>
+              <KeyRound size={16} color={colors.primary} />
+            </View>
+            <View style={styles.quickDockInfo}>
+              <Text style={styles.quickDockTitleDark}>Gabung Kode</Text>
+              <Text style={styles.quickDockSubDark}>Pake kode teman</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Urgent Action Banners for 1-Tap Quick Resolution */}
-        {(() => {
-          // 1. Runner pending verification alert
-          const runnerPendingSession = activeSessions.find(
-            (s) =>
-              s.creatorId === currentUser?.id &&
-              s.payment_proofs?.some((p) => p.status === 'PENDING')
-          );
-          if (runnerPendingSession) {
+        {/* Dynamic Action Islands (No generic emoji banners) */}
+        {runnerPendingSession &&
+          (() => {
             const pendingCount =
-              runnerPendingSession.payment_proofs?.filter((p) => p.status === 'PENDING').length || 1;
+              runnerPendingSession.payment_proofs?.filter(
+                p => p.status === 'PENDING',
+              ).length || 1;
             return (
               <TouchableOpacity
-                style={styles.urgentHomeBanner}
+                style={styles.actionIslandAmber}
                 onPress={() =>
                   navigation.navigate('SplitBillRecap', {
                     sessionId: runnerPendingSession.id,
                     lokasi: runnerPendingSession.lokasi,
                   })
                 }
-                activeOpacity={0.85}
+                activeOpacity={0.9}
               >
-                <View style={styles.urgentBannerIconWrap}>
-                  <Text style={styles.urgentBannerEmoji}>⚡</Text>
-                </View>
-                <View style={styles.urgentBannerTextWrap}>
-                  <Text style={styles.urgentBannerTitle}>
-                    {pendingCount} Bukti Pembayaran Menunggu Konfirmasi!
+                <View style={styles.islandPulseAmber} />
+                <View style={styles.islandBody}>
+                  <Text style={styles.islandTitleAmber}>
+                    {pendingCount} Bukti Bayar Menunggu Konfirmasi
                   </Text>
-                  <Text style={styles.urgentBannerSub} numberOfLines={1}>
-                    Jastip {runnerPendingSession.lokasi} • Ketuk untuk verifikasi langsung
+                  <Text style={styles.islandSubAmber} numberOfLines={1}>
+                    Jastip {runnerPendingSession.lokasi} • Ketuk untuk
+                    verifikasi
                   </Text>
                 </View>
-                <Text style={styles.urgentBannerAction}>Periksa →</Text>
+                <View style={styles.islandBtnAmber}>
+                  <Text style={styles.islandBtnTextAmber}>Periksa</Text>
+                  <ArrowUpRight size={13} color="#92400E" />
+                </View>
               </TouchableOpacity>
             );
-          }
+          })()}
 
-          // 2. Penitip unpaid bill alert (ready for payment)
-          const penitipUnpaidSession = activeSessions.find((s) => {
-            if (s.creatorId === currentUser?.id || s.status !== 'LOCKED') return false;
-            const items = s.items?.filter((i) => i.userId === currentUser?.id) || [];
-            if (items.length === 0) return false;
-            const allPriced = items.every((i) => i.harga_final !== null && i.harga_final !== undefined);
-            const notAllPaid = items.some((i) => !i.status_bayar);
-            const proof = s.payment_proofs?.find((p) => p.userId === currentUser?.id);
-            return allPriced && notAllPaid && proof?.status !== 'PENDING';
-          });
-
-          if (penitipUnpaidSession) {
-            const items = penitipUnpaidSession.items?.filter((i) => i.userId === currentUser?.id) || [];
+        {penitipUnpaidSession &&
+          (() => {
+            const items =
+              penitipUnpaidSession.items?.filter(
+                i => i.userId === currentUser?.id,
+              ) || [];
             const myBill =
               items.reduce((acc, i) => acc + (i.harga_final || 0), 0) +
               (penitipUnpaidSession.tarif_jastip || 0);
             return (
               <TouchableOpacity
-                style={[styles.urgentHomeBanner, styles.urgentHomeBannerGreen]}
+                style={styles.actionIslandEmerald}
                 onPress={() =>
                   navigation.navigate('SplitBillRecap', {
                     sessionId: penitipUnpaidSession.id,
                     lokasi: penitipUnpaidSession.lokasi,
                   })
                 }
-                activeOpacity={0.85}
+                activeOpacity={0.9}
               >
-                <View style={[styles.urgentBannerIconWrap, styles.urgentBannerIconWrapGreen]}>
-                  <CreditCard size={24} color={Colors.success} />
-                </View>
-                <View style={styles.urgentBannerTextWrap}>
-                  <Text style={[styles.urgentBannerTitle, styles.urgentBannerTitleGreen]}>
-                    Tagihan Jastip Rp {myBill.toLocaleString('id-ID')} Siap Dibayar!
+                <View style={styles.islandPulseEmerald} />
+                <View style={styles.islandBody}>
+                  <Text style={styles.islandTitleEmerald}>
+                    Tagihan Siap Dibayar: Rp {myBill.toLocaleString('id-ID')}
                   </Text>
-                  <Text style={styles.urgentBannerSub} numberOfLines={1}>
-                    Jastip {penitipUnpaidSession.lokasi} • Ketuk untuk upload bukti transfer
+                  <Text style={styles.islandSubEmerald} numberOfLines={1}>
+                    Jastip {penitipUnpaidSession.lokasi} • Upload bukti transfer
                   </Text>
                 </View>
-                <Text style={[styles.urgentBannerAction, styles.urgentBannerActionGreen]}>
-                  Bayar →
-                </Text>
+                <View style={styles.islandBtnEmerald}>
+                  <Text style={styles.islandBtnTextEmerald}>Bayar</Text>
+                  <ArrowUpRight size={13} color="#065F46" />
+                </View>
               </TouchableOpacity>
             );
-          }
+          })()}
 
-          return null;
-        })()}
-
+        {/* Sesi Jastip Section */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderLeft}>
-            <Text style={styles.sectionTitle}>Ayo Titip</Text>
+            <Text style={styles.sectionTitle}>Sesi Jastip Aktif</Text>
             <View style={styles.liveCounterBadge}>
-              <Text style={styles.liveCounterText}>{filteredSessions.length}</Text>
+              <Text style={styles.liveCounterText}>
+                {filteredSessions.length}
+              </Text>
             </View>
           </View>
           {filteredSessions.length > 1 && (
@@ -440,10 +581,16 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {filteredSessions.length === 0 ? (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>🛒</Text>
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <ShoppingBag size={24} color={colors.primary} />
+            </View>
             <Text style={styles.emptyTitle}>Belum Ada Sesi Jastip Aktif</Text>
-          </Card>
+            <Text style={styles.emptyText}>
+              Buka sirkel teman kamu atau mulai sesi belanja baru biar teman
+              bisa nitip.
+            </Text>
+          </View>
         ) : filteredSessions.length === 1 ? (
           renderErrandCard(filteredSessions[0], true)
         ) : (
@@ -455,11 +602,11 @@ export const HomeScreen: React.FC = () => {
             snapToAlignment="start"
             contentContainerStyle={styles.horizontalScrollContent}
           >
-            {filteredSessions.map((session) => renderErrandCard(session, false))}
+            {filteredSessions.map(session => renderErrandCard(session, false))}
           </ScrollView>
         )}
 
-        {/* My Groups / Circles Section */}
+        {/* My Sirkel Section */}
         <View style={[styles.sectionHeader, styles.circlesSectionHeader]}>
           <View style={styles.sectionHeaderLeft}>
             <Text style={styles.sectionTitle}>Sirkel Saya</Text>
@@ -471,26 +618,31 @@ export const HomeScreen: React.FC = () => {
             onPress={() => navigation.navigate('MyCircles')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.viewAllCirclesText}>Lihat Semua ({circles.length}) →</Text>
+            <Text style={styles.viewAllCirclesText}>
+              Lihat Semua ({circles.length}) →
+            </Text>
           </TouchableOpacity>
         </View>
 
         {circles.length === 0 ? (
-          <Card style={styles.emptyCard}>
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <Users size={24} color={colors.primary} />
+            </View>
             <Text style={styles.emptyTitle}>Belum Punya Sirkel</Text>
             <Text style={styles.emptyText}>
               Buka sirkel baru atau gabung menggunakan kode join teman kamu.
             </Text>
-          </Card>
+          </View>
         ) : (
           <>
             {circles.slice(0, 3).map((circle, index) => {
               const isOwner = circle.members?.some(
-                (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+                m => m.userId === currentUser?.id && m.role === 'OWNER',
               );
               const theme = CIRCLE_THEMES[index % CIRCLE_THEMES.length];
               const hasActiveJastip = activeSessions.some(
-                (s) => s.circleId === circle.id && (s.status === 'OPEN')
+                s => s.circleId === circle.id && s.status === 'OPEN',
               );
 
               return (
@@ -503,15 +655,24 @@ export const HomeScreen: React.FC = () => {
                       circleName: circle.nama_sirkel,
                     })
                   }
-                  activeOpacity={0.85}
+                  activeOpacity={0.88}
                 >
-                  {/* Top Row: Avatar, Names, Badges, Code */}
                   <View style={styles.cardHeaderRow}>
-                    <View style={[styles.avatarBox, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+                    <View
+                      style={[
+                        styles.avatarBox,
+                        {
+                          backgroundColor: theme.bg,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
                       <Text style={[styles.avatarText, { color: theme.text }]}>
                         {circle.nama_sirkel.charAt(0).toUpperCase()}
                       </Text>
-                      {hasActiveJastip && <View style={styles.activeDotBadge} />}
+                      {hasActiveJastip && (
+                        <View style={styles.activeDotBadge} />
+                      )}
                     </View>
 
                     <View style={styles.cardMainInfo}>
@@ -521,41 +682,53 @@ export const HomeScreen: React.FC = () => {
                         </Text>
                         <View style={styles.codePill}>
                           <Text style={styles.codePillHash}>#</Text>
-                          <Text style={styles.codePillText}>{circle.kode_join}</Text>
+                          <Text style={styles.codePillText}>
+                            {circle.kode_join}
+                          </Text>
                         </View>
                       </View>
 
                       <View style={styles.subMetaRow}>
-                        <View style={isOwner ? styles.ownerBadge : styles.memberBadge}>
-                          <Text style={isOwner ? styles.ownerBadgeText : styles.memberBadgeText}>
-                            {isOwner ? '👑 Owner' : '👥 Anggota'}
+                        <View
+                          style={
+                            isOwner ? styles.ownerBadge : styles.memberBadge
+                          }
+                        >
+                          <Text
+                            style={
+                              isOwner
+                                ? styles.ownerBadgeText
+                                : styles.memberBadgeText
+                            }
+                          >
+                            {isOwner ? 'Owner' : 'Anggota'}
                           </Text>
                         </View>
 
                         {hasActiveJastip && (
                           <View style={styles.jastipActivePill}>
                             <View style={styles.jastipActiveDot} />
-                            <Text style={styles.jastipActiveText}>Jastip Buka</Text>
+                            <Text style={styles.jastipActiveText}>
+                              Jastip Buka
+                            </Text>
                           </View>
                         )}
                       </View>
                     </View>
                   </View>
 
-                  {/* Divider Line */}
                   <View style={styles.cardHairline} />
 
-                  {/* Bottom Row: Avatars & Clean Action Pill */}
                   <View style={styles.cardFooterRow}>
                     <View style={styles.footerLeft}>
                       <AvatarStack
                         users={
-                          circle.members?.map((m) => ({
+                          circle.members?.map(m => ({
                             id: m.userId,
                             name: m.user?.nama || 'Teman',
                           })) || []
                         }
-                        size={26}
+                        size={24}
                         maxDisplay={3}
                         showAddButton={false}
                       />
@@ -566,7 +739,7 @@ export const HomeScreen: React.FC = () => {
 
                     <View style={styles.enterPill}>
                       <Text style={styles.enterPillText}>Buka Sirkel</Text>
-                      <ChevronRight size={14} color={Colors.primary} />
+                      <ChevronRight size={13} color={colors.primary} />
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -582,7 +755,7 @@ export const HomeScreen: React.FC = () => {
                 <Text style={styles.seeMoreCirclesText}>
                   + Lihat {circles.length - 3} Sirkel Lainnya
                 </Text>
-                <ChevronRight size={16} color={Colors.primary} />
+                <ChevronRight size={15} color={colors.primary} />
               </TouchableOpacity>
             )}
           </>
@@ -592,615 +765,756 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  logoP: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 16,
-  },
-  brandTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: Colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  userProfileBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1.5,
-    borderColor: '#C7D2FE',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userInitial: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  greetingSection: {
-    marginBottom: 16,
-  },
-  screenHeading: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: Colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  screenSub: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    padding: 0,
-  },
-  clearSearch: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '700',
-    padding: 4,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  createGroupBtn: {
-    flex: 1,
-    marginRight: 8,
-  },
-  joinGroupBtn: {
-    flex: 1,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  liveCounterBadge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 8,
-  },
-  liveCounterText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  circlesSectionHeader: {
-    marginTop: 28,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  emptyIcon: {
-    fontSize: 36,
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 24,
-    lineHeight: 18,
-  },
-  swipeHintText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  errandCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  errandCardFull: {
-    width: '100%',
-    marginBottom: 14,
-  },
-  errandCardCarousel: {
-    width: CARD_WIDTH,
-    marginRight: 12,
-    marginBottom: 8,
-  },
-  horizontalScrollContent: {
-    paddingRight: 6,
-    paddingBottom: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  cardHeaderInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  errandName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  circleSubText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  boldText: {
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  runnerAndFeeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  runnerBadge: {
-    flex: 1,
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  runnerBadgeSelf: {
-    backgroundColor: Colors.primaryLight,
-  },
-  runnerText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  runnerTextSelf: {
-    color: Colors.primary,
-    fontWeight: '700',
-  },
-  feeTag: {
-    flexShrink: 0,
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  feeTagText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#059669',
-  },
-  socialAndSpendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    padding: 10,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  socialBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  itemCountText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    marginLeft: 8,
-  },
-  spendBox: {
-    alignItems: 'flex-end',
-  },
-  spendLabel: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  spendAmount: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginTop: 1,
-  },
-  primaryActionBtn: {
-    width: '100%',
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buyerActionBtn: {
-    backgroundColor: Colors.primary,
-  },
-  requesterActionBtn: {
-    backgroundColor: Colors.primary,
-  },
-  primaryActionText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  buyerActionText: {
-    color: '#FFFFFF',
-  },
-  requesterActionText: {
-    color: '#FFFFFF',
-  },
-  pendingActionBtn: {
-    backgroundColor: '#D97706',
-  },
-  recapActionBtn: {
-    backgroundColor: '#4F46E5',
-  },
-  secondaryActionBtn: {
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  secondaryActionText: {
-    color: Colors.textSecondary,
-    fontWeight: '700',
-  },
-  waitingActionBtn: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  waitingActionText: {
-    color: Colors.textMuted,
-    fontWeight: '600',
-  },
-  paidActionBtn: {
-    backgroundColor: '#DCFCE7',
-    borderWidth: 1,
-    borderColor: '#86EFAC',
-  },
-  paidActionText: {
-    color: '#166534',
-    fontWeight: '800',
-  },
-  waitingProofActionBtn: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-  },
-  waitingProofActionText: {
-    color: '#92400E',
-    fontWeight: '800',
-  },
-  rejectedActionBtn: {
-    backgroundColor: '#FEE2E2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-  },
-  payActionBtn: {
-    backgroundColor: '#059669',
-  },
-  urgentHomeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFBEB',
-    borderWidth: 1.5,
-    borderColor: '#FCD34D',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 16,
-    gap: 10,
-  },
-  urgentHomeBannerGreen: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
-  },
-  urgentBannerIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  urgentBannerIconWrapGreen: {
-    backgroundColor: '#D1FAE5',
-  },
-  urgentBannerEmoji: {
-    fontSize: 16,
-  },
-  urgentBannerTextWrap: {
-    flex: 1,
-  },
-  urgentBannerTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#92400E',
-  },
-  urgentBannerTitleGreen: {
-    color: '#065F46',
-  },
-  urgentBannerSub: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
-  },
-  urgentBannerAction: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#D97706',
-  },
-  urgentBannerActionGreen: {
-    color: '#059669',
-  },
-  upgradedCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    position: 'relative',
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  activeDotBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  cardMainInfo: {
-    flex: 1,
-  },
-  titleCodeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  upgradedTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    flex: 1,
-  },
-  codePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  codePillHash: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textMuted,
-    marginRight: 1,
-  },
-  codePillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Colors.textSecondary,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    letterSpacing: 0.5,
-  },
-  subMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 6,
-  },
-  ownerBadge: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  ownerBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#B45309',
-  },
-  memberBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  memberBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  jastipActivePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-    gap: 4,
-  },
-  jastipActiveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#059669',
-  },
-  jastipActiveText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#047857',
-  },
-  cardHairline: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginVertical: 12,
-  },
-  cardFooterRow: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    paddingTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  memberCountLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  enterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F5FF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    gap: 2,
-  },
-  enterPillText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  viewAllCirclesText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  seeMoreCirclesBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-    gap: 6,
-  },
-  seeMoreCirclesText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    profileSnippet: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 12,
+      gap: 12,
+    },
+    avatarCircle: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    avatarInitial: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    profileTextWrap: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    greetingMini: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      marginBottom: 1,
+    },
+    profileName: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      letterSpacing: -0.4,
+    },
+    settingsIconBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: {
+      padding: 18,
+      paddingBottom: 40,
+    },
+
+    // Search Bar (Hairline border + soft shadow)
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: Platform.OS === 'ios' ? 11 : 9,
+      marginBottom: 16,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textPrimary,
+      padding: 0,
+      fontWeight: '500',
+    },
+
+    // Quick Command Dock (Replaces 50/50 generic buttons)
+    quickDock: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 20,
+    },
+    quickDockCardPrimary: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 18,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      gap: 10,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      elevation: 3,
+    },
+    quickDockCardSecondary: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 10,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    quickIconCircleWhite: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    quickIconCircleIndigo: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    quickDockInfo: {
+      flex: 1,
+    },
+    quickDockTitleLight: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: '#FFFFFF',
+    },
+    quickDockSubLight: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 1,
+    },
+    quickDockTitleDark: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    quickDockSubDark: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+
+    // Dynamic Action Islands (Urgent Banners)
+    actionIslandAmber: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FEF3C7',
+      borderWidth: 1,
+      borderColor: '#FCD34D',
+      borderRadius: 16,
+      paddingVertical: 11,
+      paddingHorizontal: 13,
+      marginBottom: 16,
+      gap: 10,
+    },
+    islandPulseAmber: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#D97706',
+    },
+    islandBody: {
+      flex: 1,
+    },
+    islandTitleAmber: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: '#92400E',
+    },
+    islandSubAmber: {
+      fontSize: 11,
+      color: '#B45309',
+      marginTop: 1,
+    },
+    islandBtnAmber: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FDE68A',
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 10,
+      gap: 3,
+    },
+    islandBtnTextAmber: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: '#92400E',
+    },
+
+    actionIslandEmerald: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#D1FAE5',
+      borderWidth: 1,
+      borderColor: '#6EE7B7',
+      borderRadius: 16,
+      paddingVertical: 11,
+      paddingHorizontal: 13,
+      marginBottom: 16,
+      gap: 10,
+    },
+    islandPulseEmerald: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#059669',
+    },
+    islandTitleEmerald: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: '#065F46',
+    },
+    islandSubEmerald: {
+      fontSize: 11,
+      color: '#047857',
+      marginTop: 1,
+    },
+    islandBtnEmerald: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#A7F3D0',
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 10,
+      gap: 3,
+    },
+    islandBtnTextEmerald: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: '#065F46',
+    },
+
+    // Section Headers
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    sectionHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      letterSpacing: -0.3,
+    },
+    liveCounterBadge: {
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 8,
+      marginLeft: 8,
+    },
+    liveCounterText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    swipeHintText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    circlesSectionHeader: {
+      marginTop: 24,
+    },
+
+    // Active Jastip Cards
+    horizontalScrollContent: {
+      paddingRight: 6,
+      paddingBottom: 6,
+    },
+    errandCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    errandCardFull: {
+      width: '100%',
+      marginBottom: 12,
+    },
+    errandCardCarousel: {
+      width: CARD_WIDTH,
+      marginRight: 12,
+      marginBottom: 6,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    locationWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 8,
+      gap: 8,
+    },
+    locationIconSquircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    locationTextWrap: {
+      flex: 1,
+    },
+    errandName: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      letterSpacing: -0.2,
+    },
+    circleSubText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+      fontWeight: '500',
+    },
+    runnerAndFeeRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+      gap: 8,
+    },
+    runnerBadge: {
+      flex: 1,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      paddingHorizontal: 8,
+      paddingVertical: 3.5,
+      borderRadius: 8,
+    },
+    runnerBadgeSelf: {
+      backgroundColor: colors.primaryLight,
+      borderColor: colors.primary,
+    },
+    runnerText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    runnerBoldText: {
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    runnerTextSelf: {
+      color: colors.primary,
+    },
+    feeTag: {
+      backgroundColor: '#ECFDF5',
+      paddingHorizontal: 8,
+      paddingVertical: 3.5,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#A7F3D0',
+    },
+    feeTagText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: '#059669',
+    },
+    socialAndSpendRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceSubtle,
+      padding: 10,
+      borderRadius: 12,
+      marginBottom: 12,
+    },
+    socialBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    itemCountText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginLeft: 7,
+    },
+    spendBox: {
+      alignItems: 'flex-end',
+    },
+    spendLabel: {
+      fontSize: 10,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    spendAmount: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      marginTop: 1,
+    },
+
+    // Action Button Styles
+    primaryActionBtn: {
+      width: '100%',
+      paddingVertical: 10,
+      borderRadius: 13,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    btnIcon: {
+      marginRight: 2,
+    },
+    primaryActionText: {
+      fontSize: 12,
+      fontWeight: '800',
+    },
+    actionBtnPrimary: {
+      backgroundColor: colors.primary,
+    },
+    actionBtnSecondary: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    actionBtnSubtle: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    actionBtnEmerald: {
+      backgroundColor: '#059669',
+    },
+    actionBtnAmber: {
+      backgroundColor: '#D97706',
+    },
+    actionBtnGreenLight: {
+      backgroundColor: '#DCFCE7',
+      borderWidth: 1,
+      borderColor: '#86EFAC',
+    },
+    actionBtnAmberLight: {
+      backgroundColor: '#FEF3C7',
+      borderWidth: 1,
+      borderColor: '#FCD34D',
+    },
+    actionBtnRedLight: {
+      backgroundColor: '#FEE2E2',
+      borderWidth: 1,
+      borderColor: '#FCA5A5',
+    },
+    actionTextLight: {
+      color: '#FFFFFF',
+    },
+    actionTextDark: {
+      color: colors.textPrimary,
+    },
+    actionTextMuted: {
+      color: colors.textSecondary,
+    },
+    actionTextGreenDark: {
+      color: '#166534',
+    },
+    actionTextAmberDark: {
+      color: '#92400E',
+    },
+    actionTextRedDark: {
+      color: '#991B1B',
+    },
+
+    // Circle Cards
+    upgradedCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 15,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    cardHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    avatarBox: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1.5,
+      position: 'relative',
+    },
+    avatarText: {
+      fontSize: 18,
+      fontWeight: '800',
+    },
+    activeDotBadge: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#10B981',
+      borderWidth: 2,
+      borderColor: colors.surface,
+    },
+    cardMainInfo: {
+      flex: 1,
+    },
+    titleCodeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    upgradedTitle: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      flex: 1,
+    },
+    codePill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: 7,
+      paddingVertical: 2.5,
+      borderRadius: 7,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    codePillHash: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textMuted,
+      marginRight: 2,
+    },
+    codePillText: {
+      fontSize: 10,
+      fontWeight: '800',
+      color: colors.textSecondary,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      letterSpacing: 0.5,
+    },
+    subMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+      gap: 6,
+    },
+    ownerBadge: {
+      backgroundColor: '#FEF3C7',
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#FDE68A',
+    },
+    ownerBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#B45309',
+    },
+    memberBadge: {
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    memberBadgeText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    jastipActivePill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#ECFDF5',
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#A7F3D0',
+      gap: 4,
+    },
+    jastipActiveDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      backgroundColor: '#059669',
+    },
+    jastipActiveText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#047857',
+    },
+    cardHairline: {
+      height: 1,
+      backgroundColor: colors.borderLight,
+      marginVertical: 10,
+    },
+    cardFooterRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    footerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+    },
+    memberCountLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    enterPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: 9,
+      paddingVertical: 4.5,
+      borderRadius: 14,
+      gap: 2,
+    },
+    enterPillText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    viewAllCirclesText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    seeMoreCirclesBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      paddingVertical: 11,
+      marginBottom: 16,
+      gap: 5,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.03,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    seeMoreCirclesText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+
+    // Empty States (Clean, modern illustration style)
+    emptyContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 32,
+      paddingHorizontal: 20,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 12,
+    },
+    emptyIconCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    emptyTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      marginBottom: 3,
+    },
+    emptyText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 17,
+    },
+  });

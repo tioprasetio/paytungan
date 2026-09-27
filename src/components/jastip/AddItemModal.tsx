@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { ShoppingBag, X, AlertCircle } from 'lucide-react-native';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
-import { Colors } from '../../theme/colors';
+import { useThemeColors, ThemeColors } from '../../theme/colors';
 
 interface AddItemModalProps {
   visible: boolean;
@@ -23,6 +24,9 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
   const [namaBarang, setNamaBarang] = useState('');
   const [catatan, setCatatan] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,9 +65,12 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
       >
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>🛍️ Titip Barang</Text>
+            <View style={styles.titleRow}>
+              <ShoppingBag size={20} color={colors.primary} />
+              <Text style={styles.modalTitle}>Titip Barang</Text>
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeText}>✕</Text>
+              <X size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -73,7 +80,8 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
 
           {error ? (
             <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠️ {error}</Text>
+              <AlertCircle size={15} color={colors.danger} />
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
@@ -115,63 +123,71 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  closeText: {
-    fontSize: 18,
-    color: Colors.textSecondary,
-    fontWeight: '700',
-  },
-  modalSubtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginBottom: 16,
-    lineHeight: 18,
-  },
-  errorBox: {
-    backgroundColor: Colors.dangerLight,
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: Colors.danger,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  cancelBtn: {
-    flex: 1,
-    marginRight: 8,
-  },
-  submitBtn: {
-    flex: 2,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      borderTopWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    closeBtn: {
+      padding: 4,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceSubtle,
+    },
+    modalSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 16,
+      lineHeight: 18,
+    },
+    errorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.dangerLight,
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    actionRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 8,
+    },
+    cancelBtn: {
+      flex: 1,
+    },
+    submitBtn: {
+      flex: 2,
+    },
+  });

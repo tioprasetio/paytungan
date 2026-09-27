@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { Header, Badge, Button } from '../components/common';
 import { BlindCartItem, AddItemModal, SessionTimer } from '../components/jastip';
-import { Colors } from '../theme/colors';
+import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores';
 import { useJastipSession } from '../hooks';
 import { useAlert } from '../context/AlertContext';
@@ -25,6 +25,8 @@ export const JastipSessionScreen: React.FC = () => {
   const route = useRoute<JastipSessionRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const currentUser = useAuthStore((state) => state.currentUser);
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const { showConfirm, showError, showWarning } = useAlert();
 
   const { sessionId, lokasi } = route.params;
@@ -207,7 +209,7 @@ export const JastipSessionScreen: React.FC = () => {
           ListEmptyComponent={
             isLoading && items.length === 0 ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.primary} />
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.loadingText}>Perbarui Keranjang...</Text>
               </View>
             ) : (
@@ -276,7 +278,7 @@ export const JastipSessionScreen: React.FC = () => {
                 onPress={handleLock}
               >
                 <Text style={styles.lockSessionBtnText}>
-                  {locking ? 'Mengunci...' : '🔒 Kunci Keranjang (Lock Session)'}
+                  {locking ? 'Mengunci...' : 'Kunci Keranjang (Lock Session)'}
                 </Text>
               </TouchableOpacity>
             ) : isTimeExpired ? (
@@ -290,7 +292,7 @@ export const JastipSessionScreen: React.FC = () => {
                 }
               >
                 <Text style={styles.expiredRequestBtnText}>
-                  ⏱️ Waktu Titip Habis (Menunggu Runner)
+                  Waktu Titip Habis (Menunggu Runner)
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -307,7 +309,7 @@ export const JastipSessionScreen: React.FC = () => {
             <View style={styles.actionRow}>
               {isBuyer ? (
                 <Button
-                  title="✏️ Input Harga Struk"
+                  title="Input Harga Struk"
                   variant="primary"
                   onPress={() =>
                     navigation.navigate('InputPrices', {
@@ -355,220 +357,221 @@ export const JastipSessionScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  feeBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginTop: 6,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: Colors.shadow.shadowColor,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  feeTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  feeSubtitle: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  feeAmount: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  listTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  liveTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.accent,
-    marginRight: 5,
-  },
-  liveText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.accentDark,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  loadingContainer: {
-    paddingVertical: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  emptyContainer: {
-    paddingVertical: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  emptyIcon: {
-    fontSize: 44,
-    marginBottom: 10,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  emptySub: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  splitSummaryCard: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  splitRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  splitRowTopSpace: {
-    marginTop: 4,
-  },
-  splitLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  splitValue: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  myShareValue: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: Colors.accentDark,
-  },
-  buyerEarningValue: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: Colors.primary,
-  },
-  bottomBar: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  actionColumn: {
-    flexDirection: 'column',
-  },
-  actionRow: {
-    flexDirection: 'row',
-  },
-  lockSessionBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  btnDisabled: {
-    opacity: 0.7,
-  },
-  lockSessionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  requestItemBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  expiredRequestBtn: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  expiredRequestBtnText: {
-    color: '#92400E',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  buyerAddReqBtn: {
-    marginTop: 8,
-    backgroundColor: '#F1F5F9',
-  },
-  buyerAddReqText: {
-    color: Colors.primary,
-  },
-  requestItemBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  buyerLeftBtn: {
-    flex: 1,
-    marginRight: 8,
-  },
-  fullFlexBtn: {
-    flex: 1,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      flex: 1,
+    },
+    feeBanner: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      borderRadius: 16,
+      marginTop: 6,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    feeTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    feeSubtitle: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    feeAmount: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    listHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      marginBottom: 8,
+    },
+    listTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    liveTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 12,
+    },
+    liveDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.accent,
+      marginRight: 5,
+    },
+    liveText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.accentDark,
+    },
+    listContent: {
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 24,
+    },
+    loadingContainer: {
+      paddingVertical: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    emptyContainer: {
+      paddingVertical: 36,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    emptyIcon: {
+      fontSize: 44,
+      marginBottom: 10,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    emptySub: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    splitSummaryCard: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    splitRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    splitRowTopSpace: {
+      marginTop: 4,
+    },
+    splitLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    splitValue: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    myShareValue: {
+      fontSize: 16,
+      fontWeight: '900',
+      color: colors.accentDark,
+    },
+    buyerEarningValue: {
+      fontSize: 16,
+      fontWeight: '900',
+      color: colors.primary,
+    },
+    bottomBar: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    actionColumn: {
+      flexDirection: 'column',
+    },
+    actionRow: {
+      flexDirection: 'row',
+    },
+    lockSessionBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    btnDisabled: {
+      opacity: 0.7,
+    },
+    lockSessionBtnText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '800',
+      letterSpacing: 0.2,
+    },
+    requestItemBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    expiredRequestBtn: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.warningLight,
+    },
+    expiredRequestBtnText: {
+      color: colors.warning,
+      fontSize: 14,
+      fontWeight: '800',
+    },
+    buyerAddReqBtn: {
+      marginTop: 8,
+      backgroundColor: colors.surfaceSubtle,
+    },
+    buyerAddReqText: {
+      color: colors.primary,
+    },
+    requestItemBtnText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    buyerLeftBtn: {
+      flex: 1,
+      marginRight: 8,
+    },
+    fullFlexBtn: {
+      flex: 1,
+    },
+  });

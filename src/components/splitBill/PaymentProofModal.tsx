@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,9 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { Colors } from '../../theme/colors';
+import { useThemeColors, ThemeColors } from '../../theme/colors';
 import { SOCKET_URL } from '../../config/api.config';
-import { PaymentProof, UserBillDetail } from '../../types';
+import { UserBillDetail } from '../../types';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { useAlert } from '../../context/AlertContext';
 import {
@@ -20,13 +20,13 @@ import {
   UploadCloud,
   CheckCircle2,
   XCircle,
-  Clock,
   CreditCard,
   FileText,
   Sparkles,
   Camera,
   Image as ImageIcon,
   RotateCw,
+  Clock,
 } from 'lucide-react-native';
 
 // Sample modern transfer receipt base64 placeholder for simulation/testing
@@ -229,6 +229,9 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
   onConfirmReject,
   onUploadSubmit,
 }) => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
   // Upload State
   const [catatan, setCatatan] = useState('');
   const [selectedImage, setSelectedImage] = useState<string>('');
@@ -240,7 +243,8 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
   const { showSuccess, showError, showWarning } = useAlert();
 
   const proof = targetUserBill?.payment_proof;
-  const isAlreadyApproved = proof?.status === 'APPROVED' || targetUserBill?.is_all_paid === true;
+  const isAlreadyApproved =
+    proof?.status === 'APPROVED' || targetUserBill?.is_all_paid === true;
 
   // Handle Pick from Gallery
   const handlePickGallery = async () => {
@@ -262,13 +266,18 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       const asset = result.assets?.[0];
       if (asset) {
         if (asset.base64) {
-          setSelectedImage(`data:${asset.type || 'image/jpeg'};base64,${asset.base64}`);
+          setSelectedImage(
+            `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`,
+          );
         } else if (asset.uri) {
           setSelectedImage(asset.uri);
         }
       }
     } catch (err: unknown) {
-      showError('Error', err instanceof Error ? err.message : 'Gagal membuka galeri foto');
+      showError(
+        'Error',
+        err instanceof Error ? err.message : 'Gagal membuka galeri foto',
+      );
     }
   };
 
@@ -292,20 +301,28 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       const asset = result.assets?.[0];
       if (asset) {
         if (asset.base64) {
-          setSelectedImage(`data:${asset.type || 'image/jpeg'};base64,${asset.base64}`);
+          setSelectedImage(
+            `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`,
+          );
         } else if (asset.uri) {
           setSelectedImage(asset.uri);
         }
       }
     } catch (err: unknown) {
-      showError('Error', err instanceof Error ? err.message : 'Gagal membuka kamera');
+      showError(
+        'Error',
+        err instanceof Error ? err.message : 'Gagal membuka kamera',
+      );
     }
   };
 
   // Handle Submit Upload
   const handleSendProof = async () => {
     if (!selectedImage) {
-      showWarning('Pilih Gambar', 'Silakan pilih gambar bukti transfer terlebih dahulu.');
+      showWarning(
+        'Pilih Gambar',
+        'Silakan pilih gambar bukti transfer terlebih dahulu.',
+      );
       return;
     }
 
@@ -316,13 +333,13 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       }
       onClose();
       showSuccess(
-        'Bukti Terkirim! 🎉',
-        'Bukti transfer berhasil dikirim ke Runner untuk diverifikasi.'
+        'Bukti Terkirim',
+        'Bukti transfer berhasil dikirim ke Runner untuk diverifikasi.',
       );
     } catch (err: unknown) {
       showError(
         'Gagal Mengunggah',
-        err instanceof Error ? err.message : 'Terjadi kesalahan'
+        err instanceof Error ? err.message : 'Terjadi kesalahan',
       );
     } finally {
       setIsSubmitting(false);
@@ -336,11 +353,14 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       setIsSubmitting(true);
       await onConfirmApprove(targetUserBill.userId);
       onClose();
-      showSuccess('Pembayaran Lunas ✅', `Pembayaran ${targetUserBill.nama} berhasil disetujui.`);
+      showSuccess(
+        'Pembayaran Lunas',
+        `Pembayaran ${targetUserBill.nama} berhasil disetujui.`,
+      );
     } catch (err: unknown) {
       showError(
         'Gagal Menyetujui',
-        err instanceof Error ? err.message : 'Terjadi kesalahan'
+        err instanceof Error ? err.message : 'Terjadi kesalahan',
       );
     } finally {
       setIsSubmitting(false);
@@ -351,7 +371,10 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
   const handleReject = async () => {
     if (!targetUserBill?.userId || !onConfirmReject) return;
     if (!alasanTolak.trim()) {
-      showWarning('Alasan Diperlukan', 'Harap isi alasan penolakan agar penitip tahu apa yang salah.');
+      showWarning(
+        'Alasan Diperlukan',
+        'Harap isi alasan penolakan agar penitip tahu apa yang salah.',
+      );
       return;
     }
     try {
@@ -359,11 +382,14 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       await onConfirmReject(targetUserBill.userId, alasanTolak.trim());
       setIsRejecting(false);
       onClose();
-      showSuccess('Bukti Ditolak ❌', `Bukti pembayaran ${targetUserBill.nama} telah ditolak.`);
+      showSuccess(
+        'Bukti Ditolak',
+        `Bukti pembayaran ${targetUserBill.nama} telah ditolak.`,
+      );
     } catch (err: unknown) {
       showError(
         'Gagal Menolak',
-        err instanceof Error ? err.message : 'Terjadi kesalahan'
+        err instanceof Error ? err.message : 'Terjadi kesalahan',
       );
     } finally {
       setIsSubmitting(false);
@@ -376,7 +402,10 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       return selectedImage;
     }
     if (proof?.bukti_url) {
-      if (proof.bukti_url.startsWith('http') || proof.bukti_url.startsWith('data:')) {
+      if (
+        proof.bukti_url.startsWith('http') ||
+        proof.bukti_url.startsWith('data:')
+      ) {
         return proof.bukti_url;
       }
       return `${SOCKET_URL}${proof.bukti_url}`;
@@ -385,14 +414,21 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTitleWrap}>
               <Text style={styles.title}>
-                {mode === 'UPLOAD' ? 'Unggah Bukti Transfer' : 'Verifikasi Bukti Transfer'}
+                {mode === 'UPLOAD'
+                  ? 'Unggah Bukti Transfer'
+                  : 'Verifikasi Bukti Transfer'}
               </Text>
               <Text style={styles.subtitle}>
                 {mode === 'UPLOAD'
@@ -401,18 +437,23 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
               </Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={20} color={Colors.textSecondary} />
+              <X size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.body}
+            contentContainerStyle={styles.bodyContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Info Summary Card */}
             {mode === 'UPLOAD' ? (
               <View style={styles.bankBanner}>
-                <CreditCard size={18} color={Colors.primary} />
+                <CreditCard size={18} color={colors.primary} />
                 <View style={styles.bankBannerInfo}>
                   <Text style={styles.bankBannerLabel}>
-                    Tujuan Transfer: {bankName || 'Rekening'} • {bankAccount || '-'}
+                    Tujuan Transfer: {bankName || 'Rekening'} •{' '}
+                    {bankAccount || '-'}
                   </Text>
                   <Text style={styles.bankBannerHolder}>
                     a/n {bankHolder || buyerName}
@@ -428,12 +469,15 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
               <View style={styles.reviewBanner}>
                 <View style={styles.reviewBannerRow}>
                   <Text style={styles.reviewLabel}>Penitip:</Text>
-                  <Text style={styles.reviewValue}>{targetUserBill?.nama} (WA: {targetUserBill?.no_whatsapp})</Text>
+                  <Text style={styles.reviewValue}>
+                    {targetUserBill?.nama} (WA: {targetUserBill?.no_whatsapp})
+                  </Text>
                 </View>
                 <View style={styles.reviewBannerRow}>
                   <Text style={styles.reviewLabel}>Total Tagihan:</Text>
                   <Text style={styles.reviewValueBold}>
-                    Rp {(targetUserBill?.total_bayar || 0).toLocaleString('id-ID')}
+                    Rp{' '}
+                    {(targetUserBill?.total_bayar || 0).toLocaleString('id-ID')}
                   </Text>
                 </View>
                 <View style={styles.reviewBannerRow}>
@@ -442,34 +486,67 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                     style={[
                       styles.statusTag,
                       isAlreadyApproved && styles.statusTagApproved,
-                      !isAlreadyApproved && proof?.status === 'REJECTED' && styles.statusTagRejected,
+                      !isAlreadyApproved &&
+                        proof?.status === 'REJECTED' &&
+                        styles.statusTagRejected,
                     ]}
                   >
+                    {isAlreadyApproved ? (
+                      <CheckCircle2
+                        size={12}
+                        color={colors.success}
+                        strokeWidth={2.5}
+                      />
+                    ) : proof?.status === 'REJECTED' ? (
+                      <XCircle
+                        size={12}
+                        color={colors.danger}
+                        strokeWidth={2.5}
+                      />
+                    ) : (
+                      <Clock
+                        size={12}
+                        color={colors.warning}
+                        strokeWidth={2.5}
+                      />
+                    )}
                     <Text
                       style={[
                         styles.statusTagText,
                         isAlreadyApproved && styles.statusTagApprovedText,
-                        !isAlreadyApproved && proof?.status === 'REJECTED' && styles.statusTagRejectedText,
+                        !isAlreadyApproved &&
+                          proof?.status === 'REJECTED' &&
+                          styles.statusTagRejectedText,
                       ]}
                     >
                       {isAlreadyApproved
-                        ? '✅ Disetujui (Lunas)'
+                        ? 'Disetujui (Lunas)'
                         : proof?.status === 'REJECTED'
-                        ? '❌ Ditolak'
-                        : '⏳ Menunggu Konfirmasi'}
+                        ? 'Ditolak'
+                        : 'Menunggu Konfirmasi'}
                     </Text>
                   </View>
                 </View>
                 {proof?.catatan ? (
                   <View style={styles.noteBox}>
-                    <FileText size={14} color={Colors.textSecondary} />
-                    <Text style={styles.noteText}>Catatan: "{proof.catatan}"</Text>
+                    <FileText size={14} color={colors.textSecondary} />
+                    <Text style={styles.noteText}>
+                      Catatan: "{proof.catatan}"
+                    </Text>
                   </View>
                 ) : null}
                 {proof?.alasan_tolak ? (
-                  <View style={[styles.noteBox, { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }]}>
-                    <XCircle size={14} color={Colors.danger} />
-                    <Text style={[styles.noteText, { color: Colors.danger }]}>
+                  <View
+                    style={[
+                      styles.noteBox,
+                      {
+                        backgroundColor: colors.dangerLight,
+                        borderColor: colors.danger,
+                      },
+                    ]}
+                  >
+                    <XCircle size={14} color={colors.danger} />
+                    <Text style={[styles.noteText, { color: colors.danger }]}>
                       Alasan Ditolak: "{proof.alasan_tolak}"
                     </Text>
                   </View>
@@ -481,7 +558,9 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
             <View style={styles.imageCard}>
               <View style={styles.imageCardHeader}>
                 <Text style={styles.imageCardTitle}>
-                  {mode === 'UPLOAD' ? 'Foto Struk / Bukti Transfer:' : 'Foto Bukti Pembayaran:'}
+                  {mode === 'UPLOAD'
+                    ? 'Foto Struk / Bukti Transfer:'
+                    : 'Foto Bukti Pembayaran:'}
                 </Text>
                 {mode === 'UPLOAD' && selectedImage ? (
                   <TouchableOpacity
@@ -502,8 +581,10 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                       onPress={handlePickGallery}
                       activeOpacity={0.7}
                     >
-                      <ImageIcon size={18} color={Colors.primary} />
-                      <Text style={styles.pickerBtnText}>Pilih dari Galeri</Text>
+                      <ImageIcon size={18} color={colors.primary} />
+                      <Text style={styles.pickerBtnText}>
+                        Pilih dari Galeri
+                      </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -511,7 +592,7 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                       onPress={handleTakePhoto}
                       activeOpacity={0.7}
                     >
-                      <Camera size={18} color={Colors.primary} />
+                      <Camera size={18} color={colors.primary} />
                       <Text style={styles.pickerBtnText}>Buka Kamera</Text>
                     </TouchableOpacity>
                   </View>
@@ -530,7 +611,9 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                       />
                       <View style={styles.changeOverlay}>
                         <RotateCw size={12} color="#FFFFFF" />
-                        <Text style={styles.changeOverlayText}>Ketuk untuk ganti foto</Text>
+                        <Text style={styles.changeOverlayText}>
+                          Ketuk untuk ganti foto
+                        </Text>
                       </View>
                     </TouchableOpacity>
                   ) : (
@@ -539,10 +622,13 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                       onPress={handlePickGallery}
                       activeOpacity={0.7}
                     >
-                      <UploadCloud size={36} color={Colors.primary} />
-                      <Text style={styles.emptyImageTitle}>Pilih Foto Struk Transfer</Text>
+                      <UploadCloud size={36} color={colors.primary} />
+                      <Text style={styles.emptyImageTitle}>
+                        Pilih Foto Struk Transfer
+                      </Text>
                       <Text style={styles.emptyImageSub}>
-                        Ketuk tombol di atas atau area ini untuk mengambil dari galeri ponselmu
+                        Ketuk tombol di atas atau area ini untuk mengambil dari
+                        galeri ponselmu
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -553,7 +639,7 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                     onPress={() => setSelectedImage(SAMPLE_RECEIPT_BASE64)}
                     activeOpacity={0.7}
                   >
-                    <Sparkles size={13} color={Colors.primary} />
+                    <Sparkles size={13} color={colors.primary} />
                     <Text style={styles.sampleReceiptText}>
                       Gunakan contoh struk simulasi (untuk testing cepat)
                     </Text>
@@ -573,11 +659,13 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
             {/* Upload Note Input */}
             {mode === 'UPLOAD' && (
               <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>Catatan Tambahan (Opsional):</Text>
+                <Text style={styles.inputLabel}>
+                  Catatan Tambahan (Opsional):
+                </Text>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Contoh: Sudah ditransfer via BCA jam 14:30 a/n Rahma"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={catatan}
                   onChangeText={setCatatan}
                   multiline
@@ -593,7 +681,7 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                 <TextInput
                   style={styles.rejectInput}
                   placeholder="Contoh: Uang belum masuk di mutasi / Nominal kurang Rp 5.000"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={alasanTolak}
                   onChangeText={setAlasanTolak}
                   multiline
@@ -613,7 +701,9 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                     {isSubmitting ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <Text style={styles.confirmRejectBtnText}>Kirim Penolakan</Text>
+                      <Text style={styles.confirmRejectBtnText}>
+                        Kirim Penolakan
+                      </Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -635,20 +725,23 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                 ) : (
                   <>
                     <UploadCloud size={18} color="#FFFFFF" />
-                    <Text style={styles.primaryBtnText}>Kirim Bukti Transfer</Text>
+                    <Text style={styles.primaryBtnText}>
+                      Kirim Bukti Transfer
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
             ) : isAlreadyApproved ? (
               <View style={styles.approvedFooterContainer}>
                 <View style={styles.approvedBanner}>
-                  <CheckCircle2 size={20} color={Colors.success} />
+                  <CheckCircle2 size={20} color={colors.success} />
                   <View style={styles.approvedBannerTexts}>
                     <Text style={styles.approvedBannerTitle}>
                       Pembayaran Telah Dikonfirmasi Lunas
                     </Text>
                     <Text style={styles.approvedBannerSub}>
-                      Bukti transfer telah disetujui. Tagihan penitip ini sudah lunas.
+                      Bukti transfer telah disetujui. Tagihan penitip ini sudah
+                      lunas.
                     </Text>
                   </View>
                 </View>
@@ -668,7 +761,7 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                   disabled={isSubmitting}
                   activeOpacity={0.8}
                 >
-                  <XCircle size={18} color={Colors.danger} />
+                  <XCircle size={18} color={colors.danger} />
                   <Text style={styles.rejectBtnText}>Tolak Bukti</Text>
                 </TouchableOpacity>
 
@@ -683,7 +776,9 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                   ) : (
                     <>
                       <CheckCircle2 size={18} color="#FFFFFF" />
-                      <Text style={styles.approveBtnText}>Konfirmasi Lunas</Text>
+                      <Text style={styles.approveBtnText}>
+                        Konfirmasi Lunas
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -696,448 +791,456 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  container: {
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    maxHeight: '90%',
-    paddingBottom: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  headerTitleWrap: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  body: {
-    maxHeight: 480,
-  },
-  bodyContent: {
-    padding: 20,
-  },
-  bankBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    borderRadius: 14,
-    padding: 12,
-    gap: 12,
-    marginBottom: 16,
-  },
-  bankBannerInfo: {
-    flex: 1,
-  },
-  bankBannerLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  bankBannerHolder: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
-  bankBannerAmount: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginTop: 3,
-  },
-  reviewBanner: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    gap: 6,
-  },
-  reviewBannerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reviewLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  reviewValue: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  reviewValueBold: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  statusTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: '#FEF3C7',
-  },
-  statusTagApproved: {
-    backgroundColor: '#DCFCE7',
-  },
-  statusTagRejected: {
-    backgroundColor: '#FEE2E2',
-  },
-  statusTagText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#92400E',
-  },
-  statusTagApprovedText: {
-    color: '#166534',
-  },
-  statusTagRejectedText: {
-    color: '#991B1B',
-  },
-  noteBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFFFFF',
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginTop: 4,
-  },
-  noteText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-    flex: 1,
-  },
-  imageCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 16,
-  },
-  imageCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  imageCardTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  resetImageText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.danger,
-  },
-  pickerBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
-  },
-  pickerBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  pickerBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  emptyImageWrapper: {
-    height: 180,
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyImageTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: 8,
-  },
-  emptyImageSub: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 16,
-  },
-  imageWrapper: {
-    height: 220,
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    position: 'relative',
-  },
-  changeOverlay: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  changeOverlayText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  sampleReceiptBtn: {
-    marginTop: 10,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8,
-  },
-  sampleReceiptText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-  proofImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-  },
-  imageHint: {
-    fontSize: 11,
-    color: Colors.primary,
-    flex: 1,
-  },
-  inputSection: {
-    marginBottom: 10,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    marginBottom: 6,
-  },
-  textInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13,
-    color: Colors.textPrimary,
-  },
-  rejectSection: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 14,
-    padding: 12,
-    marginTop: 10,
-  },
-  rejectLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.danger,
-    marginBottom: 6,
-  },
-  rejectInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 12,
-    color: Colors.textPrimary,
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  rejectActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 10,
-  },
-  cancelRejectBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-  },
-  cancelRejectBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  confirmRejectBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: Colors.danger,
-  },
-  confirmRejectBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  primaryBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  disabledBtn: {
-    opacity: 0.6,
-  },
-  reviewButtonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  rejectBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  rejectBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.danger,
-  },
-  approveBtn: {
-    flex: 1.3,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: Colors.success,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  approveBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  approvedFooterContainer: {
-    gap: 10,
-  },
-  approvedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    borderRadius: 12,
-    padding: 12,
-  },
-  approvedBannerTexts: {
-    flex: 1,
-  },
-  approvedBannerTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#166534',
-  },
-  approvedBannerSub: {
-    fontSize: 11,
-    color: '#15803D',
-    marginTop: 2,
-  },
-  closeFooterBtn: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  closeFooterBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.7)',
+      justifyContent: 'flex-end',
+    },
+    container: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      maxHeight: '90%',
+      paddingBottom: 24,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderLight,
+    },
+    headerTitleWrap: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surfaceSubtle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    body: {
+      maxHeight: 480,
+    },
+    bodyContent: {
+      padding: 20,
+    },
+    bankBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      borderRadius: 14,
+      padding: 12,
+      gap: 12,
+      marginBottom: 16,
+    },
+    bankBannerInfo: {
+      flex: 1,
+    },
+    bankBannerLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    bankBannerHolder: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    bankBannerAmount: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      marginTop: 3,
+    },
+    reviewBanner: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 16,
+      gap: 6,
+    },
+    reviewBannerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    reviewLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    reviewValue: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    reviewValueBold: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    statusTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 8,
+      backgroundColor: colors.warningLight,
+      borderWidth: 1,
+      borderColor: colors.warning,
+    },
+    statusTagApproved: {
+      backgroundColor: colors.successLight,
+      borderColor: colors.success,
+    },
+    statusTagRejected: {
+      backgroundColor: colors.dangerLight,
+      borderColor: colors.danger,
+    },
+    statusTagText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.warning,
+    },
+    statusTagApprovedText: {
+      color: colors.success,
+    },
+    statusTagRejectedText: {
+      color: colors.danger,
+    },
+    noteBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.surface,
+      padding: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      marginTop: 4,
+    },
+    noteText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      flex: 1,
+    },
+    imageCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 12,
+      marginBottom: 16,
+    },
+    imageCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    imageCardTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    resetImageText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.danger,
+    },
+    pickerBtnRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 12,
+    },
+    pickerBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+    pickerBtnText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    emptyImageWrapper: {
+      height: 180,
+      width: '100%',
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+    },
+    emptyImageTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginTop: 8,
+    },
+    emptyImageSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 4,
+      lineHeight: 16,
+    },
+    imageWrapper: {
+      height: 220,
+      width: '100%',
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 12,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      position: 'relative',
+    },
+    changeOverlay: {
+      position: 'absolute',
+      bottom: 8,
+      right: 8,
+      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    changeOverlayText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    sampleReceiptBtn: {
+      marginTop: 10,
+      paddingVertical: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 6,
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 8,
+    },
+    sampleReceiptText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    proofImage: {
+      width: '100%',
+      height: '100%',
+    },
+    imageHintRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 8,
+    },
+    imageHint: {
+      fontSize: 11,
+      color: colors.primary,
+      flex: 1,
+    },
+    inputSection: {
+      marginBottom: 10,
+    },
+    inputLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginBottom: 6,
+    },
+    textInput: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
+    rejectSection: {
+      backgroundColor: '#FEF2F2',
+      borderWidth: 1,
+      borderColor: '#FCA5A5',
+      borderRadius: 14,
+      padding: 12,
+      marginTop: 10,
+    },
+    rejectLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.danger,
+      marginBottom: 6,
+    },
+    rejectInput: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: '#FCA5A5',
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 12,
+      color: colors.textPrimary,
+      minHeight: 60,
+      textAlignVertical: 'top',
+    },
+    rejectActionRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 8,
+      marginTop: 10,
+    },
+    cancelRejectBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceSubtle,
+    },
+    cancelRejectBtnText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    confirmRejectBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: colors.danger,
+    },
+    confirmRejectBtnText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    footer: {
+      paddingHorizontal: 20,
+      paddingTop: 10,
+    },
+    primaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 14,
+    },
+    primaryBtnText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    disabledBtn: {
+      opacity: 0.6,
+    },
+    reviewButtonRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    rejectBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: '#FEF2F2',
+      borderWidth: 1,
+      borderColor: '#FCA5A5',
+      paddingVertical: 14,
+      borderRadius: 14,
+    },
+    rejectBtnText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.danger,
+    },
+    approveBtn: {
+      flex: 1.3,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: colors.success,
+      paddingVertical: 14,
+      borderRadius: 14,
+    },
+    approveBtnText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    approvedFooterContainer: {
+      gap: 10,
+    },
+    approvedBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: '#F0FDF4',
+      borderWidth: 1,
+      borderColor: '#BBF7D0',
+      borderRadius: 12,
+      padding: 12,
+    },
+    approvedBannerTexts: {
+      flex: 1,
+    },
+    approvedBannerTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#166534',
+    },
+    approvedBannerSub: {
+      fontSize: 11,
+      color: '#15803D',
+      marginTop: 2,
+    },
+    closeFooterBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 13,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    closeFooterBtnText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+  });

@@ -3,10 +3,18 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
-    "lint": "eslint .",
     "start": "react-native start",
+    "android": "react-native run-android",
+    "android:release": "react-native run-android --mode=release",
+    "apk:debug": "cd android && ./gradlew assembleDebug",
+    "apk:release": "cd android && ./gradlew assembleRelease",
+    "aab:release": "cd android && ./gradlew bundleRelease",
+    "androidClean": "cd android && ./gradlew clean && cd ../",
+    "ios": "react-native run-ios",
+    "iOSClean": "cd ios && rm -rf Pods/ Podfile.lock && pod install && cd ..",
+    "cleanAll": "npm run androidClean && npm run iOSClean",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix", 
     "test": "jest"
   },
   "dependencies": {

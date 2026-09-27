@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, ViewStyle, TextStyle } from 'react-native';
-import { Colors } from '../../theme/colors';
+import { Colors, useThemeColors } from '../../theme/colors';
 
 interface AvatarItem {
   id?: number | string;
@@ -28,6 +28,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   size = 32,
   showAddButton = true,
 }) => {
+  const colors = useThemeColors();
   const displayList = users.length > 0 ? users.slice(0, maxDisplay) : [1, 2, 3];
   const remainingCount = users.length > maxDisplay ? users.length - maxDisplay : 0;
 
@@ -37,6 +38,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
     borderRadius: size / 2,
     marginLeft: index === 0 ? 0 : -size * 0.35,
     zIndex: displayList.length - index,
+    borderColor: colors.surface,
   });
 
   const badgeOffsetStyle: ViewStyle = {
@@ -44,6 +46,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
     height: size,
     borderRadius: size / 2,
     marginLeft: -size * 0.35,
+    borderColor: colors.surface,
   };
 
   const initialTextStyle: TextStyle = {
@@ -74,8 +77,8 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
             {uri ? (
               <Image source={{ uri }} style={styles.image} />
             ) : (
-              <View style={styles.fallback}>
-                <Text style={[styles.initialText, initialTextStyle]}>
+              <View style={[styles.fallback, { backgroundColor: colors.primaryLight }]}>
+                <Text style={[styles.initialText, initialTextStyle, { color: colors.primary }]}>
                   {nameInitial}
                 </Text>
               </View>
@@ -85,14 +88,14 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
       })}
 
       {remainingCount > 0 ? (
-        <View style={[styles.avatarWrapper, styles.moreBadge, badgeOffsetStyle]}>
-          <Text style={[styles.moreText, moreTextStyle]}>
+        <View style={[styles.avatarWrapper, styles.moreBadge, badgeOffsetStyle, { backgroundColor: colors.surfaceSubtle }]}>
+          <Text style={[styles.moreText, moreTextStyle, { color: colors.textSecondary }]}>
             +{remainingCount}
           </Text>
         </View>
       ) : showAddButton ? (
-        <View style={[styles.avatarWrapper, styles.addBadge, badgeOffsetStyle]}>
-          <Text style={[styles.addText, addTextStyle]}>+</Text>
+        <View style={[styles.avatarWrapper, styles.addBadge, badgeOffsetStyle, { backgroundColor: colors.surfaceSubtle }]}>
+          <Text style={[styles.addText, addTextStyle, { color: colors.textSecondary }]}>+</Text>
         </View>
       ) : null}
     </View>

@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncStorage } from '@react-native-async-storage/async-storage';
 import { User } from '../types';
+
+const authStorage = createAsyncStorage('titipdong-auth-storage');
 
 interface AuthState {
   currentUser: User | null;
@@ -41,7 +43,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'titipdong-auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => authStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

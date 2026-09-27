@@ -9,7 +9,7 @@ import {
   TextStyle,
   StyleProp,
 } from 'react-native';
-import { Colors } from '../../theme/colors';
+import { Colors, useThemeColors } from '../../theme/colors';
 
 interface ButtonProps {
   title: string;
@@ -36,24 +36,26 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const colors = useThemeColors();
+
   const getContainerStyle = (): StyleProp<ViewStyle> => {
     const base: ViewStyle[] = [styles.button, styles[size]];
 
     switch (variant) {
       case 'primary':
-        base.push(styles.primary);
+        base.push({ backgroundColor: colors.primary });
         break;
       case 'secondary':
-        base.push(styles.secondary);
+        base.push({ backgroundColor: colors.primaryLight });
         break;
       case 'outline':
-        base.push(styles.outline);
+        base.push({ backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary });
         break;
       case 'danger':
-        base.push(styles.danger);
+        base.push({ backgroundColor: colors.danger });
         break;
       case 'ghost':
-        base.push(styles.ghost);
+        base.push({ backgroundColor: 'transparent' });
         break;
     }
 
@@ -67,23 +69,23 @@ export const Button: React.FC<ButtonProps> = ({
 
     switch (variant) {
       case 'primary':
-        base.push(styles.primaryText);
+        base.push({ color: colors.textInverse });
         break;
       case 'secondary':
-        base.push(styles.secondaryText);
+        base.push({ color: colors.primary });
         break;
       case 'outline':
-        base.push(styles.outlineText);
+        base.push({ color: colors.primary });
         break;
       case 'danger':
-        base.push(styles.dangerText);
+        base.push({ color: colors.textInverse });
         break;
       case 'ghost':
-        base.push(styles.ghostText);
+        base.push({ color: colors.textSecondary });
         break;
     }
 
-    if (disabled) base.push(styles.disabledText);
+    if (disabled) base.push({ color: colors.textMuted });
 
     return [base, textStyle];
   };
@@ -98,7 +100,7 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'danger' ? '#FFF' : Colors.primary}
+          color={variant === 'primary' || variant === 'danger' ? '#FFF' : colors.primary}
         />
       ) : (
         <>

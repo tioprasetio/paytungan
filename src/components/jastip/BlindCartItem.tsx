@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { OrderItem } from '../../types';
-import { Colors } from '../../theme/colors';
-import { NotebookPen } from 'lucide-react-native';
+import { useThemeColors, ThemeColors } from '../../theme/colors';
+import { NotebookPen, X } from 'lucide-react-native';
 
 interface BlindCartItemProps {
   item: OrderItem;
@@ -42,6 +42,9 @@ export const BlindCartItem: React.FC<BlindCartItemProps> = ({
   canRemove,
   onRemove,
 }) => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
   const isMyItem = item.userId === currentUserId;
   const requesterName = isMyItem ? 'Kamu' : item.user?.nama || `Teman #${item.userId}`;
   const iconEmoji = getItemIcon(item.nama_barang);
@@ -69,13 +72,12 @@ export const BlindCartItem: React.FC<BlindCartItemProps> = ({
 
         {item.catatan ? (
           <View style={styles.notesRow}>
-            <NotebookPen size={13} color={Colors.textMuted} />
+            <NotebookPen size={13} color={colors.textMuted} />
             <Text style={styles.notes} numberOfLines={1}>
               {item.catatan}
             </Text>
           </View>
         ) : null}
-
 
         {item.harga_final !== null && item.harga_final !== undefined ? (
           <Text style={styles.finalPrice}>
@@ -101,7 +103,7 @@ export const BlindCartItem: React.FC<BlindCartItemProps> = ({
             style={styles.deleteButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.deleteText}>✕</Text>
+            <X size={15} color={colors.danger} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -109,115 +111,113 @@ export const BlindCartItem: React.FC<BlindCartItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    padding: 14,
-    borderRadius: 18,
-    marginVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  iconEmoji: {
-    fontSize: 22,
-  },
-  middleContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 3,
-  },
-  itemName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  metaRow: {
-    marginBottom: 4,
-  },
-  metaLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  metaHighlight: {
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  notesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
-  },
-  notes: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-    flex: 1,
-  },
-  finalPrice: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Colors.accentDark,
-    marginTop: 2,
-  },
-  blindPill: {
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-    marginTop: 2,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  blindText: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    fontWeight: '600',
-  },
-  rightContent: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingLeft: 8,
-    height: 48,
-  },
-  qtyBadge: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  qtyText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  deleteText: {
-    color: Colors.danger,
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      padding: 14,
+      borderRadius: 18,
+      marginVertical: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    iconBox: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceSubtle,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    iconEmoji: {
+      fontSize: 22,
+    },
+    middleContent: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 3,
+    },
+    itemName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    metaRow: {
+      marginBottom: 4,
+    },
+    metaLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    metaHighlight: {
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    notesRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 4,
+    },
+    notes: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      flex: 1,
+    },
+    finalPrice: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.accent,
+      marginTop: 2,
+    },
+    blindPill: {
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 6,
+      alignSelf: 'flex-start',
+      marginTop: 2,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    blindText: {
+      fontSize: 10,
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
+    rightContent: {
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      paddingLeft: 8,
+      height: 48,
+    },
+    qtyBadge: {
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+    },
+    qtyText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    deleteButton: {
+      padding: 4,
+      borderRadius: 8,
+      backgroundColor: colors.dangerLight,
+    },
+  });

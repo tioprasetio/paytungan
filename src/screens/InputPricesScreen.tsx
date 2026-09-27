@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import { Receipt, NotebookPen } from 'lucide-react-native';
 import { Header } from '../components/common/Header';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
-import { Colors } from '../theme/colors';
+import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores/authStore';
 import { jastipApi } from '../api/jastip.api';
 import { OrderItem } from '../types';
@@ -29,6 +30,8 @@ export const InputPricesScreen: React.FC = () => {
   const route = useRoute<InputPricesRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const currentUser = useAuthStore((state) => state.currentUser);
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const { showAlert, showWarning, showError } = useAlert();
 
   const { sessionId, lokasi } = route.params;
@@ -98,7 +101,7 @@ export const InputPricesScreen: React.FC = () => {
       await jastipApi.inputPrices(sessionId, currentUser.id, pricePayload);
 
       showAlert({
-        title: 'Berhasil Disimpan! 🎉',
+        title: 'Berhasil Disimpan!',
         message: 'Harga asli dari struk telah tersimpan. Split bill otomatis dihitung untuk seluruh anggota sirkel.',
         type: 'success',
         buttons: [
@@ -132,7 +135,7 @@ export const InputPricesScreen: React.FC = () => {
       >
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Memuat daftar pesanan...</Text>
           </View>
         ) : items.length === 0 ? (
@@ -142,7 +145,10 @@ export const InputPricesScreen: React.FC = () => {
         ) : (
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.banner}>
-              <Text style={styles.bannerTitle}>🧾 Masukkan Harga Sesuai Struk Belanja</Text>
+              <View style={styles.bannerHeaderRow}>
+                <Receipt size={18} color={colors.primary} />
+                <Text style={styles.bannerTitle}>Masukkan Harga Sesuai Struk Belanja</Text>
+              </View>
               <Text style={styles.bannerSub}>
                 Input nominal harga satuan final dari setiap barang penitip untuk otomatisasi split bill.
               </Text>
@@ -158,7 +164,10 @@ export const InputPricesScreen: React.FC = () => {
                 </View>
 
                 {item.catatan ? (
-                  <Text style={styles.itemNotes}>📝 Catatan: {item.catatan}</Text>
+                  <View style={styles.noteRow}>
+                    <NotebookPen size={12} color={colors.textSecondary} />
+                    <Text style={styles.itemNotes}>Catatan: {item.catatan}</Text>
+                  </View>
                 ) : null}
 
                 <Input
@@ -173,7 +182,7 @@ export const InputPricesScreen: React.FC = () => {
             ))}
 
             <Button
-              title="💾 Simpan & Hitung Split Bill"
+              title="Simpan & Hitung Split Bill"
               size="lg"
               loading={submitting}
               onPress={handleSavePrices}
@@ -186,85 +195,97 @@ export const InputPricesScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    color: Colors.textSecondary,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  banner: {
-    backgroundColor: Colors.primaryLight,
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-  },
-  bannerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.primaryDark,
-  },
-  bannerSub: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  itemCard: {
-    marginBottom: 12,
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    flex: 1,
-    marginRight: 8,
-  },
-  itemRequester: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  bold: {
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  itemNotes: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  priceInputContainer: {
-    marginBottom: 0,
-    marginTop: 8,
-  },
-  saveBtn: {
-    marginTop: 12,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      flex: 1,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    loadingText: {
+      marginTop: 10,
+      color: colors.textSecondary,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    content: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    banner: {
+      backgroundColor: colors.surfaceSubtle,
+      padding: 14,
+      borderRadius: 14,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    bannerHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 4,
+    },
+    bannerTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    bannerSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      lineHeight: 16,
+    },
+    itemCard: {
+      marginBottom: 12,
+    },
+    itemHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    itemName: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      flex: 1,
+      marginRight: 8,
+    },
+    itemRequester: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    bold: {
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    noteRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 4,
+    },
+    itemNotes: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      flex: 1,
+    },
+    priceInputContainer: {
+      marginBottom: 0,
+      marginTop: 8,
+    },
+    saveBtn: {
+      marginTop: 12,
+    },
+  });

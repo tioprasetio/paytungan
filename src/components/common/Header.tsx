@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
-import { Colors } from '../../theme/colors';
+import { useThemeColors } from '../../theme/colors';
 
 interface HeaderProps {
   title: string;
@@ -18,8 +18,18 @@ export const Header: React.FC<HeaderProps> = ({
   backIcon,
   rightAction,
 }) => {
+  const colors = useThemeColors();
+
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          borderBottomColor: colors.border,
+        },
+      ]}
+    >
       <View style={styles.leftRow}>
         {onBack && (
           <TouchableOpacity
@@ -28,15 +38,21 @@ export const Header: React.FC<HeaderProps> = ({
             activeOpacity={0.7}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            {backIcon || <ArrowLeft size={22} color={Colors.textPrimary} />}
+            {backIcon || <ArrowLeft size={22} color={colors.textPrimary} />}
           </TouchableOpacity>
         )}
         <View style={styles.titleContainer}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text
+            style={[styles.title, { color: colors.textPrimary }]}
+            numberOfLines={1}
+          >
             {title}
           </Text>
           {subtitle && (
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <Text
+              style={[styles.subtitle, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
               {subtitle}
             </Text>
           )}
@@ -54,9 +70,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   leftRow: {
     flexDirection: 'row',
@@ -67,25 +81,18 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingVertical: 4,
   },
-  backText: {
-    fontSize: 22,
-    color: Colors.textPrimary,
-    fontWeight: '700',
-  },
   titleContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-    color: Colors.textPrimary,
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   rightAction: {
-    marginLeft: 8,
+    marginLeft: 12,
   },
 });

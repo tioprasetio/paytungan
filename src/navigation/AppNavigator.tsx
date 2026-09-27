@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { View, ActivityIndicator, StyleSheet, StatusBar, Platform } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
-import { useAuthStore } from '../stores';
-import { Colors } from '../theme/colors';
+import { useAuthStore, useThemeStore } from '../stores';
+import { useThemeColors } from '../theme/colors';
 
 // Screens
 import {
@@ -18,6 +18,9 @@ import {
   InputPricesScreen,
   SplitBillRecapScreen,
   SettingsScreen,
+  EditProfileScreen,
+  PaymentSettingsScreen,
+  SecuritySettingsScreen,
   MyCirclesScreen,
 } from '../screens';
 
@@ -26,18 +29,48 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export const AppNavigator: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+  const colors = useThemeColors();
 
   // While restoring session from AsyncStorage, display a clean splash/loading indicator
   if (!isHydrated) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
+  const navigationTheme = isDarkMode
+    ? {
+        ...DarkTheme,
+        colors: {
+          ...DarkTheme.colors,
+          background: colors.background,
+          card: colors.surface,
+          text: colors.textPrimary,
+          border: colors.border,
+          primary: colors.primary,
+        },
+      }
+    : {
+        ...DefaultTheme,
+        colors: {
+          ...DefaultTheme.colors,
+          background: colors.background,
+          card: colors.surface,
+          text: colors.textPrimary,
+          border: colors.border,
+          primary: colors.primary,
+        },
+      };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        {...(Platform.OS === 'android' ? { backgroundColor: colors.background } : {})}
+      />
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -65,6 +98,9 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen name="InputPrices" component={InputPricesScreen} />
             <Stack.Screen name="SplitBillRecap" component={SplitBillRecapScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="PaymentSettings" component={PaymentSettingsScreen} />
+            <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
             <Stack.Screen name="MyCircles" component={MyCirclesScreen} />
           </>
         )}
@@ -76,7 +112,6 @@ export const AppNavigator: React.FC = () => {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },

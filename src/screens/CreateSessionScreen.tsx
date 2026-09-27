@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import { AlertCircle, Info } from 'lucide-react-native';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { Header } from '../components/common/Header';
-import { Colors } from '../theme/colors';
+import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores/authStore';
 import { jastipApi } from '../api/jastip.api';
 
@@ -18,6 +19,8 @@ export const CreateSessionScreen: React.FC = () => {
   const route = useRoute<CreateSessionRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const currentUser = useAuthStore((state) => state.currentUser);
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const { circleId, circleName } = route.params;
 
@@ -93,7 +96,8 @@ export const CreateSessionScreen: React.FC = () => {
 
           {error ? (
             <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠️ {error}</Text>
+              <AlertCircle size={15} color={colors.danger} />
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
@@ -116,7 +120,10 @@ export const CreateSessionScreen: React.FC = () => {
           />
 
           <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>💡 Info Transparansi Jastip:</Text>
+            <View style={styles.infoHeaderRow}>
+              <Info size={16} color={colors.primary} />
+              <Text style={styles.infoTitle}>Info Transparansi Jastip:</Text>
+            </View>
             <Text style={styles.infoText}>
               • Tarif ini flat dikenakan satu kali kepada setiap teman yang menitip.{'\n'}
               • Harga barang asli di kasir akan kamu masukkan saat sesi dikunci.
@@ -124,7 +131,7 @@ export const CreateSessionScreen: React.FC = () => {
           </View>
 
           <Button
-            title="🚀 Buka Sesi Jastip Sekarang"
+            title="Buka Sesi Jastip Sekarang"
             variant="primary"
             size="lg"
             loading={loading}
@@ -137,58 +144,69 @@ export const CreateSessionScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  errorBox: {
-    backgroundColor: Colors.dangerLight,
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: Colors.danger,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  infoBox: {
-    backgroundColor: Colors.primaryLight,
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  infoTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.primaryDark,
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-  submitBtn: {
-    marginTop: 4,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      flex: 1,
+    },
+    content: {
+      padding: 24,
+    },
+    heading: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 20,
+      lineHeight: 18,
+    },
+    errorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.dangerLight,
+      padding: 10,
+      borderRadius: 10,
+      marginBottom: 16,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    infoBox: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      padding: 14,
+      borderRadius: 14,
+      marginBottom: 20,
+    },
+    infoHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 6,
+    },
+    infoTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    infoText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    submitBtn: {
+      marginTop: 4,
+    },
+  });

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Colors } from '../../theme/colors';
+import { useThemeColors, ThemeColors } from '../../theme/colors';
 
 interface SessionTimerProps {
   waktuTutup?: string | Date | null;
@@ -21,20 +21,23 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
   onExtendTime,
   extending = false,
 }) => {
-  const calculateRemaining = () => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
+  const calculateRemaining = useCallback(() => {
     if (waktuTutup) {
       const target = new Date(waktuTutup).getTime();
       const diff = Math.max(0, Math.floor((target - Date.now()) / 1000));
       return diff;
     }
     return initialSeconds;
-  };
+  }, [waktuTutup, initialSeconds]);
 
   const [secondsRemaining, setSecondsRemaining] = useState(calculateRemaining);
 
   useEffect(() => {
     setSecondsRemaining(calculateRemaining());
-  }, [waktuTutup]);
+  }, [calculateRemaining]);
 
   useEffect(() => {
     if (isLocked) return;
@@ -54,7 +57,7 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isLocked, waktuTutup]);
+  }, [isLocked, waktuTutup, calculateRemaining]);
 
   const isExpired = secondsRemaining <= 0;
   const minutes = Math.floor(secondsRemaining / 60);
@@ -95,8 +98,8 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
         <View style={styles.expiredNoticeBox}>
           <Text style={styles.expiredNoticeText}>
             {isBuyer
-              ? '⏱️ Waktu titip habis! Kunci keranjang sekarang atau perpanjang waktu:'
-              : '⏱️ Waktu titip habis. Menunggu pembeli mengunci atau memperpanjang waktu.'}
+              ? 'Waktu titip habis! Kunci keranjang sekarang atau perpanjang waktu:'
+              : 'Waktu titip habis. Menunggu pembeli mengunci atau memperpanjang waktu.'}
           </Text>
         </View>
       ) : null}
@@ -117,7 +120,7 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
                 activeOpacity={0.7}
               >
                 {extending ? (
-                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
                   <Text style={styles.extendBtnText}>+{mins} Mnt</Text>
                 )}
@@ -130,128 +133,129 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 14,
-  },
-  timerCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    backgroundColor: Colors.surface,
-    shadowColor: Colors.shadow.shadowColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  outerBorderRing: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 6,
-    borderColor: '#EEF2FF',
-    borderTopColor: Colors.primary,
-    borderRightColor: Colors.primary,
-    transform: [{ rotate: '-45deg' }],
-  },
-  expiredRing: {
-    borderColor: '#FEF3C7',
-    borderTopColor: Colors.warning,
-    borderRightColor: Colors.warning,
-  },
-  lockedRing: {
-    borderColor: '#F1F5F9',
-    borderTopColor: Colors.textMuted,
-    borderRightColor: Colors.textMuted,
-  },
-  innerContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  remainingLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  expiredLabel: {
-    color: Colors.warning,
-    fontWeight: '800',
-  },
-  timerDigits: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: Colors.textPrimary,
-    letterSpacing: 0.5,
-  },
-  expiredDigits: {
-    color: Colors.warning,
-  },
-  subLabel: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  expiredNoticeBox: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginTop: 14,
-    maxWidth: 320,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  expiredNoticeText: {
-    fontSize: 12,
-    color: '#92400E',
-    textAlign: 'center',
-    fontWeight: '600',
-    lineHeight: 17,
-  },
-  extendSection: {
-    alignItems: 'center',
-    marginTop: 12,
-    width: '100%',
-  },
-  extendHeading: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  extendButtonsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  extendBtn: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-    minWidth: 72,
-    alignItems: 'center',
-  },
-  extendBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginVertical: 14,
+    },
+    timerCircle: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      backgroundColor: colors.surface,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      elevation: 3,
+    },
+    outerBorderRing: {
+      position: 'absolute',
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      borderWidth: 6,
+      borderColor: colors.surfaceSubtle,
+      borderTopColor: colors.primary,
+      borderRightColor: colors.primary,
+      transform: [{ rotate: '-45deg' }],
+    },
+    expiredRing: {
+      borderColor: colors.surfaceSubtle,
+      borderTopColor: colors.warning,
+      borderRightColor: colors.warning,
+    },
+    lockedRing: {
+      borderColor: colors.surfaceSubtle,
+      borderTopColor: colors.textMuted,
+      borderRightColor: colors.textMuted,
+    },
+    innerContent: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
+    },
+    remainingLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: 2,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    expiredLabel: {
+      color: colors.warning,
+      fontWeight: '800',
+    },
+    timerDigits: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: colors.textPrimary,
+      letterSpacing: 0.5,
+    },
+    expiredDigits: {
+      color: colors.warning,
+    },
+    subLabel: {
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 2,
+      textAlign: 'center',
+    },
+    expiredNoticeBox: {
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 12,
+      marginTop: 14,
+      maxWidth: 320,
+      borderWidth: 1,
+      borderColor: colors.warningLight,
+    },
+    expiredNoticeText: {
+      fontSize: 12,
+      color: colors.warning,
+      textAlign: 'center',
+      fontWeight: '600',
+      lineHeight: 17,
+    },
+    extendSection: {
+      alignItems: 'center',
+      marginTop: 12,
+      width: '100%',
+    },
+    extendHeading: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    extendButtonsRow: {
+      flexDirection: 'row',
+      gap: 8,
+      justifyContent: 'center',
+    },
+    extendBtn: {
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      minWidth: 72,
+      alignItems: 'center',
+    },
+    extendBtnText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    btnDisabled: {
+      opacity: 0.6,
+    },
+  });

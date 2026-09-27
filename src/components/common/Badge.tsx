@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '../../theme/colors';
+import { useThemeColors } from '../../theme/colors';
 import { SessionStatus } from '../../types';
 
 interface BadgeProps {
@@ -8,31 +8,33 @@ interface BadgeProps {
 }
 
 export const Badge: React.FC<BadgeProps> = ({ status }) => {
+  const colors = useThemeColors();
+
   const getBadgeConfig = () => {
     switch (status) {
       case 'OPEN':
         return {
           label: 'OPEN',
-          bg: Colors.statusOpenBg,
-          text: Colors.statusOpenText,
+          bg: colors.statusOpenBg,
+          text: colors.statusOpenText,
         };
       case 'LOCKED':
         return {
           label: 'LOCKED',
-          bg: Colors.statusLockedBg,
-          text: Colors.statusLockedText,
+          bg: colors.statusLockedBg,
+          text: colors.statusLockedText,
         };
       case 'COMPLETED':
         return {
           label: 'COMPLETED',
-          bg: Colors.statusCompletedBg,
-          text: Colors.statusCompletedText,
+          bg: colors.statusCompletedBg,
+          text: colors.statusCompletedText,
         };
       default:
         return {
           label: status,
-          bg: '#F1F5F9',
-          text: '#64748B',
+          bg: colors.surfaceSubtle,
+          text: colors.textSecondary,
         };
     }
   };
@@ -41,7 +43,9 @@ export const Badge: React.FC<BadgeProps> = ({ status }) => {
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
-      <Text style={[styles.badgeText, { color: config.text }]}>{config.label}</Text>
+      <Text style={[styles.badgeText, { color: config.text }]}>
+        {config.label}
+      </Text>
     </View>
   );
 };

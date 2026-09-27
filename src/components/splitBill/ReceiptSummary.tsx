@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SplitBillRecapResponse } from '../../types';
-import { Colors } from '../../theme/colors';
+import { useThemeColors, ThemeColors } from '../../theme/colors';
 
 interface ReceiptSummaryProps {
   recap: SplitBillRecapResponse;
 }
 
 export const ReceiptSummary: React.FC<ReceiptSummaryProps> = ({ recap }) => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -25,14 +28,14 @@ export const ReceiptSummary: React.FC<ReceiptSummaryProps> = ({ recap }) => {
 
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Terkumpul</Text>
-          <Text style={[styles.statValue, { color: Colors.accentDark }]}>
+          <Text style={[styles.statValue, { color: colors.accentDark }]}>
             Rp {recap.total_collected.toLocaleString('id-ID')}
           </Text>
         </View>
 
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Sisa Tertunda</Text>
-          <Text style={[styles.statValue, { color: Colors.danger }]}>
+          <Text style={[styles.statValue, { color: colors.danger }]}>
             Rp {recap.total_pending.toLocaleString('id-ID')}
           </Text>
         </View>
@@ -40,67 +43,78 @@ export const ReceiptSummary: React.FC<ReceiptSummaryProps> = ({ recap }) => {
 
       <View style={styles.buyerInfo}>
         <Text style={styles.buyerText}>
-          Pembeli (Buyer): <Text style={styles.bold}>{recap.buyer.nama}</Text> (WA: {recap.buyer.no_whatsapp})
+          Pembeli (Runner): <Text style={styles.bold}>{recap.buyer.nama}</Text>{' '}
+          (WA: {recap.buyer.no_whatsapp})
         </Text>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  header: {
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  location: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.background,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  statBox: {
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginBottom: 2,
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  buyerInfo: {
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  buyerText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  bold: {
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    header: {
+      marginBottom: 12,
+    },
+    title: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      letterSpacing: -0.2,
+    },
+    location: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      backgroundColor: colors.background,
+      padding: 12,
+      borderRadius: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    statBox: {
+      alignItems: 'center',
+    },
+    statLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginBottom: 3,
+      fontWeight: '500',
+    },
+    statValue: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    buyerInfo: {
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    buyerText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    bold: {
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+  });

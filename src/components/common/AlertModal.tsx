@@ -1,16 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Pressable,
   Animated,
   Dimensions,
 } from 'react-native';
-import { Colors } from '../../theme/colors';
+import { useThemeColors, ThemeColors } from '../../theme/colors';
 
 export type AlertType = 'warning' | 'error' | 'success' | 'info' | 'confirm';
 
@@ -41,6 +40,8 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   buttons,
   onClose,
 }) => {
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -74,28 +75,28 @@ export const AlertModal: React.FC<AlertModalProps> = ({
           icon: icon || '⚠️',
           iconBg: '#FEF3C7',
           iconColor: '#D97706',
-          accentColor: Colors.warning,
+          accentColor: colors.warning,
         };
       case 'error':
         return {
           icon: icon || '❌',
           iconBg: '#FEE2E2',
           iconColor: '#DC2626',
-          accentColor: Colors.danger,
+          accentColor: colors.danger,
         };
       case 'success':
         return {
           icon: icon || '🎉',
           iconBg: '#D1FAE5',
           iconColor: '#059669',
-          accentColor: Colors.accent,
+          accentColor: colors.accent,
         };
       case 'confirm':
         return {
           icon: icon || '❓',
           iconBg: '#EEF2FF',
           iconColor: '#4F46E5',
-          accentColor: Colors.primary,
+          accentColor: colors.primary,
         };
       case 'info':
       default:
@@ -103,7 +104,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
           icon: icon || '💡',
           iconBg: '#EEF2FF',
           iconColor: '#4F46E5',
-          accentColor: Colors.primary,
+          accentColor: colors.primary,
         };
     }
   };
@@ -140,7 +141,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
       onRequestClose={onClose}
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation?.()}>
+        <Pressable onPress={e => e.stopPropagation?.()}>
           <Animated.View
             style={[
               styles.modalCard,
@@ -151,7 +152,9 @@ export const AlertModal: React.FC<AlertModalProps> = ({
             ]}
           >
             {/* Type Accent Badge Header */}
-            <View style={[styles.iconContainer, { backgroundColor: config.iconBg }]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: config.iconBg }]}
+            >
               <Text style={styles.iconText}>{config.icon}</Text>
             </View>
 
@@ -163,13 +166,17 @@ export const AlertModal: React.FC<AlertModalProps> = ({
             <View
               style={[
                 styles.buttonContainer,
-                actionButtons.length === 2 ? styles.twoButtonsRow : styles.columnButtons,
+                actionButtons.length === 2
+                  ? styles.twoButtonsRow
+                  : styles.columnButtons,
               ]}
             >
               {actionButtons.map((btn, index) => {
                 const isCancel = btn.style === 'cancel';
                 const isDestructive = btn.style === 'destructive';
-                const isPrimary = btn.style === 'primary' || (!btn.style && index === actionButtons.length - 1);
+                const isPrimary =
+                  btn.style === 'primary' ||
+                  (!btn.style && index === actionButtons.length - 1);
 
                 let btnBgStyle = styles.btnDefaultBg;
                 let btnTextStyle = styles.btnDefaultText;
@@ -196,7 +203,9 @@ export const AlertModal: React.FC<AlertModalProps> = ({
                     activeOpacity={0.8}
                     onPress={() => handleButtonPress(btn)}
                   >
-                    <Text style={[styles.btnText, btnTextStyle]}>{btn.text}</Text>
+                    <Text style={[styles.btnText, btnTextStyle]}>
+                      {btn.text}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -208,106 +217,107 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalCard: {
-    width: Math.min(width - 48, 380),
-    backgroundColor: Colors.surface,
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 22,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  iconText: {
-    fontSize: 28,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 24,
-  },
-  message: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-    paddingHorizontal: 6,
-  },
-  buttonContainer: {
-    width: '100%',
-  },
-  twoButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  columnButtons: {
-    flexDirection: 'column',
-    gap: 10,
-  },
-  flexButton: {
-    flex: 1,
-  },
-  button: {
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  btnPrimaryBg: {
-    backgroundColor: Colors.primary,
-  },
-  btnPrimaryText: {
-    color: '#FFFFFF',
-  },
-  btnDestructiveBg: {
-    backgroundColor: Colors.danger,
-  },
-  btnDestructiveText: {
-    color: '#FFFFFF',
-  },
-  btnCancelBg: {
-    backgroundColor: Colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  btnCancelText: {
-    color: Colors.textSecondary,
-  },
-  btnDefaultBg: {
-    backgroundColor: Colors.primaryLight,
-  },
-  btnDefaultText: {
-    color: Colors.primaryDark,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    modalCard: {
+      width: Math.min(width - 48, 380),
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      paddingHorizontal: 24,
+      paddingTop: 28,
+      paddingBottom: 22,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    iconContainer: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    iconText: {
+      fontSize: 28,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: 8,
+      lineHeight: 24,
+    },
+    message: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 24,
+      paddingHorizontal: 6,
+    },
+    buttonContainer: {
+      width: '100%',
+    },
+    twoButtonsRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    columnButtons: {
+      flexDirection: 'column',
+      gap: 10,
+    },
+    flexButton: {
+      flex: 1,
+    },
+    button: {
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnText: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    btnPrimaryBg: {
+      backgroundColor: colors.primary,
+    },
+    btnPrimaryText: {
+      color: '#FFFFFF',
+    },
+    btnDestructiveBg: {
+      backgroundColor: colors.danger,
+    },
+    btnDestructiveText: {
+      color: '#FFFFFF',
+    },
+    btnCancelBg: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    btnCancelText: {
+      color: colors.textSecondary,
+    },
+    btnDefaultBg: {
+      backgroundColor: colors.primaryLight,
+    },
+    btnDefaultText: {
+      color: colors.primaryDark,
+    },
+  });

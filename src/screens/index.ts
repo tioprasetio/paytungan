@@ -8,4 +8,7 @@ export * from './JastipSessionScreen';
 export * from './InputPricesScreen';
 export * from './SplitBillRecapScreen';
 export * from './SettingsScreen';
+export * from './EditProfileScreen';
+export * from './PaymentSettingsScreen';
+export * from './SecuritySettingsScreen';
 export * from './MyCirclesScreen';
