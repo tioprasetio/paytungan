@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { createAsyncStorage } from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appearance } from 'react-native';
-
-const themeStorage = createAsyncStorage('paytungan-theme-storage');
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -37,7 +35,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'paytungan-theme-storage',
-      storage: createJSONStorage(() => themeStorage),
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         themeMode: state.themeMode,
         isDarkMode: state.isDarkMode,

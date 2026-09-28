@@ -1,6 +1,7 @@
 import { useThemeStore } from '../stores/themeStore';
 
 export const LightColors = {
+  bgGradient: ['#F8FAFC', '#F8FAFC'] as [string, string],
   // Brand Colors - Electric Indigo & Emerald Mint
   primary: '#4F46E5', // Electric Indigo
   primaryDark: '#3730A3',
@@ -9,6 +10,7 @@ export const LightColors = {
 
   secondary: '#4F46E5',
   secondaryLight: '#EEF2FF',
+  secondaryThird: '#4F46E5',
 
   accent: '#10B981', // Emerald Mint
   accentDark: '#059669',
@@ -63,49 +65,51 @@ export const LightColors = {
 };
 
 export const DarkColors = {
-  // Brand Colors - Vibrant Indigo & Emerald
-  primary: '#6366F1', // Soft Electric Indigo
-  primaryDark: '#4F46E5',
-  primaryLight: '#1E1B4B',
-  primaryHover: '#818CF8',
+  bgGradient: ['#0B0F19', '#1E293B'] as [string, string],
+  // Brand Colors - Vibrant Indigo & Emerald (optimized for dark contrast)
+  primary: '#818CF8', // Indigo 400 (terang & kontras di dark mode)
+  primaryDark: '#6366F1',
+  primaryLight: 'rgba(129, 140, 248, 0.16)', // Translucent glow, tidak nyaru/mati
+  primaryHover: '#A5B4FC',
 
-  secondary: '#6366F1',
-  secondaryLight: '#1E1B4B',
+  secondary: '#818CF8',
+  secondaryLight: 'rgba(129, 140, 248, 0.16)',
+  secondaryThird: '#F8FAFC',
 
-  accent: '#10B981',
-  accentDark: '#34D399',
-  accentLight: '#064E3B',
+  accent: '#34D399', // Emerald 400
+  accentDark: '#10B981',
+  accentLight: 'rgba(52, 211, 153, 0.16)',
 
-  // Neutrals - Slate Midnight
-  background: '#0F172A',
+  // Neutrals - Deep Slate
+  background: '#0B0F19',
   surface: '#1E293B',
   surfaceSubtle: '#334155',
-  border: 'rgba(255, 255, 255, 0.1)',
-  borderLight: 'rgba(255, 255, 255, 0.06)',
+  border: 'rgba(255, 255, 255, 0.12)',
+  borderLight: 'rgba(255, 255, 255, 0.08)',
 
   // Typography
   textPrimary: '#F8FAFC',
   textSecondary: '#94A3B8',
   textMuted: '#64748B',
-  textInverse: '#0F172A',
+  textInverse: '#FFFFFF', // Fix: text pada button warna primary/danger tetap putih terang
 
   // System Statuses
-  success: '#10B981',
-  successLight: '#064E3B',
-  warning: '#F59E0B',
-  warningLight: '#451A03',
-  danger: '#EF4444',
-  dangerLight: '#450A0A',
-  info: '#3B82F6',
-  infoLight: '#1E3A8A',
+  success: '#34D399',
+  successLight: 'rgba(52, 211, 153, 0.15)',
+  warning: '#FBBF24',
+  warningLight: 'rgba(251, 191, 36, 0.15)',
+  danger: '#F87171',
+  dangerLight: 'rgba(248, 113, 113, 0.15)',
+  info: '#60A5FA',
+  infoLight: 'rgba(96, 165, 250, 0.15)',
 
   // Status Badges
-  statusOpenBg: '#064E3B',
+  statusOpenBg: 'rgba(52, 211, 153, 0.15)',
   statusOpenText: '#34D399',
-  statusLockedBg: '#451A03',
+  statusLockedBg: 'rgba(251, 191, 36, 0.15)',
   statusLockedText: '#FBBF24',
-  statusCompletedBg: '#1E3A8A',
-  statusCompletedText: '#60A5FA',
+  statusCompletedBg: 'rgba(129, 140, 248, 0.15)',
+  statusCompletedText: '#818CF8',
 
   // iOS Shadow Helper
   shadow: {

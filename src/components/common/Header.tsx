@@ -9,6 +9,7 @@ interface HeaderProps {
   onBack?: () => void;
   backIcon?: React.ReactNode;
   rightAction?: React.ReactNode;
+  transparent?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   onBack,
   backIcon,
   rightAction,
+  transparent = false,
 }) => {
   const colors = useThemeColors();
 
@@ -25,8 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: colors.background,
-          borderBottomColor: colors.border,
+          backgroundColor: transparent ? 'transparent' : colors.background,
+          borderBottomColor: transparent ? 'transparent' : colors.border,
         },
       ]}
     >

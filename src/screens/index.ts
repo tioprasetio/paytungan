@@ -12,3 +12,4 @@ export * from './EditProfileScreen';
 export * from './PaymentSettingsScreen';
 export * from './SecuritySettingsScreen';
 export * from './MyCirclesScreen';
+export * from './SplashScreen';

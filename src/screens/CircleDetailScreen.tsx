@@ -52,6 +52,7 @@ import {
   LogOut,
   Edit3,
 } from 'lucide-react-native';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type CircleDetailRouteProp = RouteProp<RootStackParamList, 'CircleDetail'>;
 type NavigationProp = NativeStackNavigationProp<
@@ -88,25 +89,32 @@ export const CircleDetailScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
 
-  const loadCircleData = useCallback(async () => {
-    try {
-      setRefreshing(true);
-      const circleData = await circleApi.getCircleById(
-        circleId,
-        currentUser?.id,
-      );
-      setCircle(circleData);
-      setSessions(circleData.sessions || []);
-    } catch (err) {
-      console.warn('Error loading circle:', err);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [circleId, currentUser?.id]);
+  const loadCircleData = useCallback(
+    async (isPullToRefresh = false) => {
+      if (isPullToRefresh) {
+        setRefreshing(true);
+      }
+      try {
+        const circleData = await circleApi.getCircleById(
+          circleId,
+          currentUser?.id,
+        );
+        setCircle(circleData);
+        setSessions(circleData.sessions || []);
+      } catch (err) {
+        console.warn('Error loading circle:', err);
+      } finally {
+        if (isPullToRefresh) {
+          setRefreshing(false);
+        }
+      }
+    },
+    [circleId, currentUser?.id],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      loadCircleData();
+      loadCircleData(false);
     }, [loadCircleData]),
   );
 
@@ -419,627 +427,636 @@ export const CircleDetailScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header
-        title={circle?.nama_sirkel || circleName}
-        onBack={() => navigation.goBack()}
-        rightAction={
-          <TouchableOpacity
-            style={styles.headerShareBtn}
-            onPress={handleShareOrCopy}
-            activeOpacity={0.7}
-          >
-            <Share2 size={18} color={colors.textPrimary} />
-          </TouchableOpacity>
-        }
-      />
-
-      {/* Circle Info Strip Header (Compact & Crisp) */}
-      <View style={styles.topInfoBar}>
-        <View style={styles.topInfoLeft}>
-          <View style={styles.avatarIconBox}>
-            <Users size={18} color={colors.primary} />
-          </View>
-          <View style={styles.topInfoTexts}>
-            <Text style={styles.circleNameTitle} numberOfLines={1}>
-              {circle?.nama_sirkel || circleName}
-            </Text>
-            <View style={styles.subInfoRow}>
-              <View
-                style={[
-                  styles.roleBadgeMini,
-                  isOwner && styles.roleBadgeMiniOwner,
-                ]}
-              >
-                {isOwner && (
-                  <Crown
-                    size={10}
-                    color="#92400E"
-                    style={styles.crownMiniIcon}
-                  />
-                )}
-                <Text
-                  style={[styles.roleLabel, isOwner && styles.roleLabelOwner]}
-                >
-                  {isOwner ? 'Owner' : 'Anggota'}
-                </Text>
-              </View>
-              <Text style={styles.dotDivider}>•</Text>
-              <Text style={styles.membersCountLabel}>
-                {circle?.members?.length || 1} Anggota
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.codePill}
-          onPress={handleShareOrCopy}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.codePillText}>{displayCode}</Text>
-          <Copy size={13} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick Command Dock (Replaces generic 50/50 buttons) */}
-      <View style={styles.dockContainer}>
-        <View style={styles.quickDock}>
-          <TouchableOpacity
-            style={styles.quickDockCardPrimary}
-            onPress={() =>
-              navigation.navigate('CreateSession', {
-                circleId,
-                circleName: circle?.nama_sirkel || circleName,
-              })
-            }
-            activeOpacity={0.85}
-          >
-            <View style={styles.quickIconCircleWhite}>
-              <ShoppingBag size={17} color={colors.primary} />
-            </View>
-            <View style={styles.quickDockInfo}>
-              <Text style={styles.quickDockTitleLight}>Buka Jastip</Text>
-              <Text style={styles.quickDockSubLight}>
-                Mulai sesi belanja baru
-              </Text>
-            </View>
-            <Plus size={16} color="#FFFFFF" style={styles.dockArrowIcon} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickDockCardSecondary}
-            onPress={handleShareOrCopy}
-            activeOpacity={0.85}
-          >
-            <View style={styles.quickIconCircleTint}>
-              <Share2 size={16} color={colors.primary} />
-            </View>
-            <View style={styles.quickDockInfo}>
-              <Text style={styles.quickDockTitleDark}>Undang Teman</Text>
-              <Text style={styles.quickDockSubDark} numberOfLines={1}>
-                {displayCode} • Bagikan
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Segmented Tabs Switcher */}
-      <View style={styles.segmentedTabBarWrapper}>
-        <View style={styles.segmentedTabBar}>
-          <TouchableOpacity
-            style={[
-              styles.segmentTab,
-              activeTab === 'SESSIONS' && styles.segmentTabActive,
-            ]}
-            onPress={() => setActiveTab('SESSIONS')}
-            activeOpacity={0.7}
-          >
-            <ShoppingBag
-              size={13}
-              color={
-                activeTab === 'SESSIONS' ? colors.primary : colors.textMuted
-              }
-              style={styles.tabIconSpacing}
-            />
-            <Text
-              style={[
-                styles.segmentTabText,
-                activeTab === 'SESSIONS' && styles.segmentTabTextActive,
-              ]}
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <Header
+          title={circle?.nama_sirkel || circleName}
+          onBack={() => navigation.goBack()}
+          transparent
+          rightAction={
+            <TouchableOpacity
+              style={styles.headerShareBtn}
+              onPress={handleShareOrCopy}
+              activeOpacity={0.7}
             >
-              Sesi ({sessions.length})
-            </Text>
-          </TouchableOpacity>
+              <Share2 size={18} color={colors.textPrimary} />
+            </TouchableOpacity>
+          }
+        />
 
-          <TouchableOpacity
-            style={[
-              styles.segmentTab,
-              activeTab === 'MEMBERS' && styles.segmentTabActive,
-            ]}
-            onPress={() => setActiveTab('MEMBERS')}
-            activeOpacity={0.7}
-          >
-            <Users
-              size={13}
-              color={
-                activeTab === 'MEMBERS' ? colors.primary : colors.textMuted
-              }
-              style={styles.tabIconSpacing}
-            />
-            <Text
-              style={[
-                styles.segmentTabText,
-                activeTab === 'MEMBERS' && styles.segmentTabTextActive,
-              ]}
-            >
-              Anggota ({circle?.members?.length || 0})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.segmentTab,
-              activeTab === 'SETTINGS' && styles.segmentTabActive,
-            ]}
-            onPress={() => setActiveTab('SETTINGS')}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.segmentTabText,
-                activeTab === 'SETTINGS' && styles.segmentTabTextActive,
-              ]}
-            >
-              Pengaturan
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* TAB 1: SESSIONS */}
-      {activeTab === 'SESSIONS' && (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.filterSection}>
-            <View style={styles.searchBox}>
-              <Search
-                size={15}
-                color={colors.textMuted}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Cari toko atau pembuat jastip..."
-                placeholderTextColor={colors.textMuted}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery ? (
-                <TouchableOpacity
-                  onPress={() => setSearchQuery('')}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <X size={15} color={colors.textMuted} />
-                </TouchableOpacity>
-              ) : null}
+        {/* Circle Info Strip Header (Compact & Crisp) */}
+        <View style={styles.topInfoBar}>
+          <View style={styles.topInfoLeft}>
+            <View style={styles.avatarIconBox}>
+              <Users size={18} color={colors.primary} />
             </View>
-
-            <View style={styles.filterChipsRow}>
-              <TouchableOpacity
-                style={[
-                  styles.filterChip,
-                  sessionFilter === 'ALL' && styles.filterChipActive,
-                ]}
-                onPress={() => setSessionFilter('ALL')}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    sessionFilter === 'ALL' && styles.filterChipTextActive,
-                  ]}
-                >
-                  Semua ({sessions.length})
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterChip,
-                  sessionFilter === 'ACTIVE' && styles.filterChipActive,
-                ]}
-                onPress={() => setSessionFilter('ACTIVE')}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    sessionFilter === 'ACTIVE' && styles.filterChipTextActive,
-                  ]}
-                >
-                  Aktif ({activeSessionsCount})
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterChip,
-                  sessionFilter === 'COMPLETED' && styles.filterChipActive,
-                ]}
-                onPress={() => setSessionFilter('COMPLETED')}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    sessionFilter === 'COMPLETED' &&
-                      styles.filterChipTextActive,
-                  ]}
-                >
-                  Selesai ({completedSessionsCount})
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <FlatList
-            data={filteredSessions}
-            keyExtractor={item => String(item.id)}
-            renderItem={renderSessionItem}
-            contentContainerStyle={styles.listPadding}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={loadCircleData}
-              />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyCard}>
-                <View style={styles.emptyIconCircle}>
-                  <ShoppingBag size={24} color={colors.textMuted} />
-                </View>
-                <Text style={styles.emptyTitle}>
-                  {sessionFilter === 'ACTIVE'
-                    ? 'Tidak Ada Sesi Jastip Aktif'
-                    : sessionFilter === 'COMPLETED'
-                    ? 'Belum Ada Sesi yang Selesai'
-                    : searchQuery
-                    ? 'Tidak Ditemukan Sesi yang Cocok'
-                    : 'Belum Ada Sesi Jastip'}
-                </Text>
-                <Text style={styles.emptyText}>
-                  {sessionFilter === 'ACTIVE'
-                    ? 'Saat ini belum ada yang membuka sesi belanja di sirkel ini.'
-                    : 'Buka sesi belanja baru agar anggota lain bisa menitip barang.'}
-                </Text>
-                {sessionFilter !== 'COMPLETED' && (
-                  <Button
-                    title="Buka Sesi Jastip Baru"
-                    size="sm"
-                    variant="primary"
-                    onPress={() =>
-                      navigation.navigate('CreateSession', {
-                        circleId,
-                        circleName: circle?.nama_sirkel || circleName,
-                      })
-                    }
-                    style={styles.emptyCtaBtn}
-                  />
-                )}
-              </View>
-            }
-          />
-        </View>
-      )}
-
-      {/* TAB 2: MEMBERS */}
-      {activeTab === 'MEMBERS' && (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.filterSection}>
-            <View style={styles.searchBox}>
-              <Search
-                size={15}
-                color={colors.textMuted}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Cari nama atau nomor WhatsApp..."
-                placeholderTextColor={colors.textMuted}
-                value={memberSearchQuery}
-                onChangeText={setMemberSearchQuery}
-              />
-              {memberSearchQuery ? (
-                <TouchableOpacity
-                  onPress={() => setMemberSearchQuery('')}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <X size={15} color={colors.textMuted} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </View>
-
-          <FlatList
-            data={filteredMembers}
-            keyExtractor={item => String(item.id)}
-            contentContainerStyle={styles.listPadding}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={loadCircleData}
-              />
-            }
-            renderItem={({ item: member, index }) => {
-              const isMe = member.userId === currentUser?.id;
-              const isMemberOwner = member.role === 'OWNER';
-
-              return (
+            <View style={styles.topInfoTexts}>
+              <Text style={styles.circleNameTitle} numberOfLines={1}>
+                {circle?.nama_sirkel || circleName}
+              </Text>
+              <View style={styles.subInfoRow}>
                 <View
                   style={[
-                    styles.memberCardItem,
-                    index === 0 && styles.memberCardFirst,
-                    index === filteredMembers.length - 1 &&
-                      styles.memberCardLast,
+                    styles.roleBadgeMini,
+                    isOwner && styles.roleBadgeMiniOwner,
                   ]}
                 >
-                  <View style={styles.memberLeft}>
-                    <View
-                      style={[
-                        styles.memberAvatar,
-                        isMemberOwner && styles.memberAvatarOwner,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.memberAvatarText,
-                          isMemberOwner && styles.memberAvatarTextOwner,
-                        ]}
-                      >
-                        {member.user?.nama?.charAt(0).toUpperCase() || 'U'}
-                      </Text>
-                    </View>
-                    <View style={styles.memberTextInfo}>
-                      <Text style={styles.memberName} numberOfLines={1}>
-                        {member.user?.nama || 'User'}
-                        {isMe ? ' (Kamu)' : ''}
-                      </Text>
-                      <Text style={styles.memberPhone}>
-                        {member.user?.no_whatsapp}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.memberRightActions}>
-                    <View
-                      style={[
-                        styles.roleBadge,
-                        isMemberOwner && styles.roleBadgeOwner,
-                      ]}
-                    >
-                      {isMemberOwner ? (
-                        <Crown
-                          size={11}
-                          color="#92400E"
-                          style={styles.roleIconMargin}
-                        />
-                      ) : (
-                        <User
-                          size={11}
-                          color={colors.textSecondary}
-                          style={styles.roleIconMargin}
-                        />
-                      )}
-                      <Text
-                        style={[
-                          styles.roleText,
-                          isMemberOwner && styles.roleTextOwner,
-                        ]}
-                      >
-                        {isMemberOwner ? 'Owner' : 'Anggota'}
-                      </Text>
-                    </View>
-
-                    {/* Owner can kick other members */}
-                    {isOwner && !isMemberOwner && (
-                      <TouchableOpacity
-                        style={styles.kickMemberBtn}
-                        onPress={() =>
-                          handleKickMember(
-                            member.userId,
-                            member.user?.nama || 'Anggota',
-                          )
-                        }
-                        activeOpacity={0.7}
-                      >
-                        <Trash2
-                          size={12}
-                          color={colors.danger}
-                          style={styles.btnIconMargin}
-                        />
-                        <Text style={styles.kickMemberText}>Hapus</Text>
-                      </TouchableOpacity>
-                    )}
-
-                    {/* Non-owner can leave circle */}
-                    {!isOwner && isMe && (
-                      <TouchableOpacity
-                        style={styles.leaveMemberBtn}
-                        onPress={handleLeaveCircle}
-                        activeOpacity={0.7}
-                      >
-                        <LogOut
-                          size={12}
-                          color={colors.textSecondary}
-                          style={styles.btnIconMargin}
-                        />
-                        <Text style={styles.leaveMemberText}>Keluar</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              );
-            }}
-            ListEmptyComponent={
-              <View style={styles.emptyCard}>
-                <View style={styles.emptyIconCircle}>
-                  <Users size={24} color={colors.textMuted} />
-                </View>
-                <Text style={styles.emptyTitle}>Anggota Tidak Ditemukan</Text>
-                <Text style={styles.emptyText}>
-                  Tidak ada anggota yang cocok dengan kata kunci pencarian.
-                </Text>
-              </View>
-            }
-          />
-        </View>
-      )}
-
-      {/* TAB 3: SETTINGS & DANGER ZONE */}
-      {activeTab === 'SETTINGS' && (
-        <ScrollView
-          contentContainerStyle={styles.settingsScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Circle Summary Card */}
-          <Card style={styles.settingsCard}>
-            <Text style={styles.settingsHeading}>Informasi Sirkel</Text>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoRowLabel}>Nama Sirkel</Text>
-              <View style={styles.infoRowValWithAction}>
-                <Text style={styles.infoRowVal}>
-                  {circle?.nama_sirkel || circleName}
-                </Text>
-                {isOwner && (
-                  <TouchableOpacity
-                    style={styles.editNameBtn}
-                    onPress={() => {
-                      setEditName(circle?.nama_sirkel || circleName);
-                      setEditModalVisible(true);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Edit3
-                      size={11}
-                      color={colors.primary}
-                      style={styles.btnIconMargin}
+                  {isOwner && (
+                    <Crown
+                      size={10}
+                      color="#92400E"
+                      style={styles.crownMiniIcon}
                     />
-                    <Text style={styles.editNameText}>Ubah</Text>
+                  )}
+                  <Text
+                    style={[styles.roleLabel, isOwner && styles.roleLabelOwner]}
+                  >
+                    {isOwner ? 'Owner' : 'Anggota'}
+                  </Text>
+                </View>
+                <Text style={styles.dotDivider}>•</Text>
+                <Text style={styles.membersCountLabel}>
+                  {circle?.members?.length || 1} Anggota
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.codePill}
+            onPress={handleShareOrCopy}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.codePillText}>{displayCode}</Text>
+            <Copy size={13} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Command Dock (Replaces generic 50/50 buttons) */}
+        <View style={styles.dockContainer}>
+          <View style={styles.quickDock}>
+            <TouchableOpacity
+              style={styles.quickDockCardPrimary}
+              onPress={() =>
+                navigation.navigate('CreateSession', {
+                  circleId,
+                  circleName: circle?.nama_sirkel || circleName,
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <View style={styles.quickIconCircleWhite}>
+                <ShoppingBag size={17} color={colors.primary} />
+              </View>
+              <View style={styles.quickDockInfo}>
+                <Text style={styles.quickDockTitleLight}>Buka Jastip</Text>
+                <Text style={styles.quickDockSubLight}>
+                  Mulai sesi belanja baru
+                </Text>
+              </View>
+              <Plus size={16} color="#FFFFFF" style={styles.dockArrowIcon} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickDockCardSecondary}
+              onPress={handleShareOrCopy}
+              activeOpacity={0.85}
+            >
+              <View style={styles.quickIconCircleTint}>
+                <Share2 size={16} color={colors.primary} />
+              </View>
+              <View style={styles.quickDockInfo}>
+                <Text style={styles.quickDockTitleDark}>Undang Teman</Text>
+                <Text style={styles.quickDockSubDark} numberOfLines={1}>
+                  {displayCode} • Bagikan
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Segmented Tabs Switcher */}
+        <View style={styles.segmentedTabBarWrapper}>
+          <View style={styles.segmentedTabBar}>
+            <TouchableOpacity
+              style={[
+                styles.segmentTab,
+                activeTab === 'SESSIONS' && styles.segmentTabActive,
+              ]}
+              onPress={() => setActiveTab('SESSIONS')}
+              activeOpacity={0.7}
+            >
+              <ShoppingBag
+                size={13}
+                color={
+                  activeTab === 'SESSIONS' ? colors.primary : colors.textMuted
+                }
+                style={styles.tabIconSpacing}
+              />
+              <Text
+                style={[
+                  styles.segmentTabText,
+                  activeTab === 'SESSIONS' && styles.segmentTabTextActive,
+                ]}
+              >
+                Sesi ({sessions.length})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.segmentTab,
+                activeTab === 'MEMBERS' && styles.segmentTabActive,
+              ]}
+              onPress={() => setActiveTab('MEMBERS')}
+              activeOpacity={0.7}
+            >
+              <Users
+                size={13}
+                color={
+                  activeTab === 'MEMBERS' ? colors.primary : colors.textMuted
+                }
+                style={styles.tabIconSpacing}
+              />
+              <Text
+                style={[
+                  styles.segmentTabText,
+                  activeTab === 'MEMBERS' && styles.segmentTabTextActive,
+                ]}
+              >
+                Anggota ({circle?.members?.length || 0})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.segmentTab,
+                activeTab === 'SETTINGS' && styles.segmentTabActive,
+              ]}
+              onPress={() => setActiveTab('SETTINGS')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.segmentTabText,
+                  activeTab === 'SETTINGS' && styles.segmentTabTextActive,
+                ]}
+              >
+                Pengaturan
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* TAB 1: SESSIONS */}
+        {activeTab === 'SESSIONS' && (
+          <View style={styles.tabContentContainer}>
+            <View style={styles.filterSection}>
+              <View style={styles.searchBox}>
+                <Search
+                  size={15}
+                  color={colors.textMuted}
+                  style={styles.searchIcon}
+                />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Cari toko atau pembuat jastip..."
+                  placeholderTextColor={colors.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery ? (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <X size={15} color={colors.textMuted} />
                   </TouchableOpacity>
-                )}
+                ) : null}
+              </View>
+
+              <View style={styles.filterChipsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    sessionFilter === 'ALL' && styles.filterChipActive,
+                  ]}
+                  onPress={() => setSessionFilter('ALL')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      sessionFilter === 'ALL' && styles.filterChipTextActive,
+                    ]}
+                  >
+                    Semua ({sessions.length})
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    sessionFilter === 'ACTIVE' && styles.filterChipActive,
+                  ]}
+                  onPress={() => setSessionFilter('ACTIVE')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      sessionFilter === 'ACTIVE' && styles.filterChipTextActive,
+                    ]}
+                  >
+                    Aktif ({activeSessionsCount})
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    sessionFilter === 'COMPLETED' && styles.filterChipActive,
+                  ]}
+                  onPress={() => setSessionFilter('COMPLETED')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      sessionFilter === 'COMPLETED' &&
+                        styles.filterChipTextActive,
+                    ]}
+                  >
+                    Selesai ({completedSessionsCount})
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoRowLabel}>Kode Join Sirkel</Text>
-              <Text style={styles.infoRowVal}>{displayCode}</Text>
+            <FlatList
+              data={filteredSessions}
+              keyExtractor={item => String(item.id)}
+              renderItem={renderSessionItem}
+              contentContainerStyle={styles.listPadding}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={() => loadCircleData(true)}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyCard}>
+                  <View style={styles.emptyIconCircle}>
+                    <ShoppingBag size={24} color={colors.textMuted} />
+                  </View>
+                  <Text style={styles.emptyTitle}>
+                    {sessionFilter === 'ACTIVE'
+                      ? 'Tidak Ada Sesi Jastip Aktif'
+                      : sessionFilter === 'COMPLETED'
+                      ? 'Belum Ada Sesi yang Selesai'
+                      : searchQuery
+                      ? 'Tidak Ditemukan Sesi yang Cocok'
+                      : 'Belum Ada Sesi Jastip'}
+                  </Text>
+                  <Text style={styles.emptyText}>
+                    {sessionFilter === 'ACTIVE'
+                      ? 'Saat ini belum ada yang membuka sesi belanja di sirkel ini.'
+                      : 'Buka sesi belanja baru agar anggota lain bisa menitip barang.'}
+                  </Text>
+                  {sessionFilter !== 'COMPLETED' && (
+                    <Button
+                      title="Buka Sesi Jastip Baru"
+                      size="sm"
+                      variant="primary"
+                      onPress={() =>
+                        navigation.navigate('CreateSession', {
+                          circleId,
+                          circleName: circle?.nama_sirkel || circleName,
+                        })
+                      }
+                      style={styles.emptyCtaBtn}
+                    />
+                  )}
+                </View>
+              }
+            />
+          </View>
+        )}
+
+        {/* TAB 2: MEMBERS */}
+        {activeTab === 'MEMBERS' && (
+          <View style={styles.tabContentContainer}>
+            <View style={styles.filterSection}>
+              <View style={styles.searchBox}>
+                <Search
+                  size={15}
+                  color={colors.textMuted}
+                  style={styles.searchIcon}
+                />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Cari nama atau nomor WhatsApp..."
+                  placeholderTextColor={colors.textMuted}
+                  value={memberSearchQuery}
+                  onChangeText={setMemberSearchQuery}
+                />
+                {memberSearchQuery ? (
+                  <TouchableOpacity
+                    onPress={() => setMemberSearchQuery('')}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <X size={15} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoRowLabel}>Peran Kamu</Text>
-              <Text style={styles.infoRowVal}>
-                {isOwner ? 'Pembuat Sirkel (Owner)' : 'Anggota Sirkel'}
-              </Text>
-            </View>
+            <FlatList
+              data={filteredMembers}
+              keyExtractor={item => String(item.id)}
+              contentContainerStyle={styles.listPadding}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={() => loadCircleData(true)}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
+              renderItem={({ item: member, index }) => {
+                const isMe = member.userId === currentUser?.id;
+                const isMemberOwner = member.role === 'OWNER';
 
-            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.infoRowLabel}>Total Riwayat Belanja</Text>
-              <Text style={styles.infoRowVal}>{sessions.length} sesi</Text>
-            </View>
-          </Card>
+                return (
+                  <View
+                    style={[
+                      styles.memberCardItem,
+                      index === 0 && styles.memberCardFirst,
+                      index === filteredMembers.length - 1 &&
+                        styles.memberCardLast,
+                    ]}
+                  >
+                    <View style={styles.memberLeft}>
+                      <View
+                        style={[
+                          styles.memberAvatar,
+                          isMemberOwner && styles.memberAvatarOwner,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.memberAvatarText,
+                            isMemberOwner && styles.memberAvatarTextOwner,
+                          ]}
+                        >
+                          {member.user?.nama?.charAt(0).toUpperCase() || 'U'}
+                        </Text>
+                      </View>
+                      <View style={styles.memberTextInfo}>
+                        <Text style={styles.memberName} numberOfLines={1}>
+                          {member.user?.nama || 'User'}
+                          {isMe ? ' (Kamu)' : ''}
+                        </Text>
+                        <Text style={styles.memberPhone}>
+                          {member.user?.no_whatsapp}
+                        </Text>
+                      </View>
+                    </View>
 
-          {/* Share Action Button */}
-          <TouchableOpacity
-            style={styles.shareCodeActionBtn}
-            onPress={handleShareOrCopy}
-            activeOpacity={0.75}
+                    <View style={styles.memberRightActions}>
+                      <View
+                        style={[
+                          styles.roleBadge,
+                          isMemberOwner && styles.roleBadgeOwner,
+                        ]}
+                      >
+                        {isMemberOwner ? (
+                          <Crown
+                            size={11}
+                            color="#92400E"
+                            style={styles.roleIconMargin}
+                          />
+                        ) : (
+                          <User
+                            size={11}
+                            color={colors.textSecondary}
+                            style={styles.roleIconMargin}
+                          />
+                        )}
+                        <Text
+                          style={[
+                            styles.roleText,
+                            isMemberOwner && styles.roleTextOwner,
+                          ]}
+                        >
+                          {isMemberOwner ? 'Owner' : 'Anggota'}
+                        </Text>
+                      </View>
+
+                      {/* Owner can kick other members */}
+                      {isOwner && !isMemberOwner && (
+                        <TouchableOpacity
+                          style={styles.kickMemberBtn}
+                          onPress={() =>
+                            handleKickMember(
+                              member.userId,
+                              member.user?.nama || 'Anggota',
+                            )
+                          }
+                          activeOpacity={0.7}
+                        >
+                          <Trash2
+                            size={12}
+                            color={colors.danger}
+                            style={styles.btnIconMargin}
+                          />
+                          <Text style={styles.kickMemberText}>Hapus</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Non-owner can leave circle */}
+                      {!isOwner && isMe && (
+                        <TouchableOpacity
+                          style={styles.leaveMemberBtn}
+                          onPress={handleLeaveCircle}
+                          activeOpacity={0.7}
+                        >
+                          <LogOut
+                            size={12}
+                            color={colors.textSecondary}
+                            style={styles.btnIconMargin}
+                          />
+                          <Text style={styles.leaveMemberText}>Keluar</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={styles.emptyCard}>
+                  <View style={styles.emptyIconCircle}>
+                    <Users size={24} color={colors.textMuted} />
+                  </View>
+                  <Text style={styles.emptyTitle}>Anggota Tidak Ditemukan</Text>
+                  <Text style={styles.emptyText}>
+                    Tidak ada anggota yang cocok dengan kata kunci pencarian.
+                  </Text>
+                </View>
+              }
+            />
+          </View>
+        )}
+
+        {/* TAB 3: SETTINGS & DANGER ZONE */}
+        {activeTab === 'SETTINGS' && (
+          <ScrollView
+            contentContainerStyle={styles.settingsScrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Share2
-              size={16}
-              color={colors.primary}
-              style={styles.btnIconMargin}
-            />
-            <Text style={styles.shareCodeActionText}>
-              Bagikan Kode Join Sirkel
-            </Text>
-          </TouchableOpacity>
+            {/* Circle Summary Card */}
+            <Card style={styles.settingsCard}>
+              <Text style={styles.settingsHeading}>Informasi Sirkel</Text>
 
-          {/* Danger Zone */}
-          <View style={styles.dangerBox}>
-            <Text style={styles.dangerTitle}>Zona Bahaya</Text>
-            <Text style={styles.dangerSub}>
-              {isOwner
-                ? 'Menghapus sirkel akan melenyapkan semua riwayat jastip dan mengeluarkan seluruh anggota secara permanen.'
-                : 'Keluar dari sirkel ini akan menghentikan akses Anda ke belanjaan bersama sirkel ini.'}
-            </Text>
-            {isOwner ? (
-              <Button
-                title="Hapus Sirkel Ini Secara Permanen"
-                variant="secondary"
-                loading={deleting}
-                onPress={handleDeleteCircle}
-                style={styles.deleteCircleBtn}
-              />
-            ) : (
-              <Button
-                title="Keluar dari Sirkel Ini"
-                variant="secondary"
-                loading={deleting}
-                onPress={handleLeaveCircle}
-                style={styles.leaveCircleBtn}
-              />
-            )}
-          </View>
-        </ScrollView>
-      )}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoRowLabel}>Nama Sirkel</Text>
+                <View style={styles.infoRowValWithAction}>
+                  <Text style={styles.infoRowVal}>
+                    {circle?.nama_sirkel || circleName}
+                  </Text>
+                  {isOwner && (
+                    <TouchableOpacity
+                      style={styles.editNameBtn}
+                      onPress={() => {
+                        setEditName(circle?.nama_sirkel || circleName);
+                        setEditModalVisible(true);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Edit3
+                        size={11}
+                        color={colors.primary}
+                        style={styles.btnIconMargin}
+                      />
+                      <Text style={styles.editNameText}>Ubah</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
 
-      {/* Edit Circle Name Modal */}
-      <Modal
-        visible={editModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalOverlay}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Ubah Nama Sirkel</Text>
-            <Text style={styles.modalSub}>
-              Masukkan nama baru untuk sirkel belanja ini.
-            </Text>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoRowLabel}>Kode Join Sirkel</Text>
+                <Text style={styles.infoRowVal}>{displayCode}</Text>
+              </View>
 
-            <Input
-              label="Nama Sirkel"
-              placeholder="Contoh: Kost Pintar, Anak IT 24"
-              value={editName}
-              onChangeText={setEditName}
-              autoFocus
-            />
+              <View style={styles.infoRow}>
+                <Text style={styles.infoRowLabel}>Peran Kamu</Text>
+                <Text style={styles.infoRowVal}>
+                  {isOwner ? 'Pembuat Sirkel (Owner)' : 'Anggota Sirkel'}
+                </Text>
+              </View>
 
-            <View style={styles.modalActions}>
-              <Button
-                title="Batal"
-                variant="secondary"
-                size="md"
-                onPress={() => setEditModalVisible(false)}
-                style={styles.modalCancelBtn}
+              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.infoRowLabel}>Total Riwayat Belanja</Text>
+                <Text style={styles.infoRowVal}>{sessions.length} sesi</Text>
+              </View>
+            </Card>
+
+            {/* Share Action Button */}
+            <TouchableOpacity
+              style={styles.shareCodeActionBtn}
+              onPress={handleShareOrCopy}
+              activeOpacity={0.75}
+            >
+              <Share2
+                size={16}
+                color={colors.primary}
+                style={styles.btnIconMargin}
               />
-              <Button
-                title={savingName ? 'Menyimpan...' : 'Simpan'}
-                variant="primary"
-                size="md"
-                loading={savingName}
-                onPress={handleSaveCircleName}
-                style={styles.modalSaveBtn}
-              />
+              <Text style={styles.shareCodeActionText}>
+                Bagikan Kode Join Sirkel
+              </Text>
+            </TouchableOpacity>
+
+            {/* Danger Zone */}
+            <View style={styles.dangerBox}>
+              <Text style={styles.dangerTitle}>Perhatian!</Text>
+              <Text style={styles.dangerSub}>
+                {isOwner
+                  ? 'Menghapus sirkel akan melenyapkan semua riwayat jastip dan mengeluarkan seluruh anggota secara permanen.'
+                  : 'Keluar dari sirkel ini akan menghentikan akses Anda ke belanjaan bersama sirkel ini.'}
+              </Text>
+              {isOwner ? (
+                <Button
+                  title="Hapus Sirkel Ini Secara Permanen"
+                  variant="secondary"
+                  loading={deleting}
+                  onPress={handleDeleteCircle}
+                  style={styles.deleteCircleBtn}
+                  textStyle={{ color: colors.danger, fontWeight: '700' }}
+                />
+              ) : (
+                <Button
+                  title="Keluar dari Sirkel Ini"
+                  variant="secondary"
+                  loading={deleting}
+                  onPress={handleLeaveCircle}
+                  style={styles.leaveCircleBtn}
+                  textStyle={{ color: colors.danger, fontWeight: '700' }}
+                />
+              )}
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
+          </ScrollView>
+        )}
+
+        {/* Edit Circle Name Modal */}
+        <Modal
+          visible={editModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalOverlay}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Ubah Nama Sirkel</Text>
+              <Text style={styles.modalSub}>
+                Masukkan nama baru untuk sirkel belanja ini.
+              </Text>
+
+              <Input
+                label="Nama Sirkel"
+                placeholder="Contoh: Kost Pintar, Anak IT 24"
+                value={editName}
+                onChangeText={setEditName}
+                autoFocus
+              />
+
+              <View style={styles.modalActions}>
+                <Button
+                  title="Batal"
+                  variant="secondary"
+                  size="md"
+                  onPress={() => setEditModalVisible(false)}
+                  style={styles.modalCancelBtn}
+                />
+                <Button
+                  title={savingName ? 'Menyimpan...' : 'Simpan'}
+                  variant="primary"
+                  size="md"
+                  loading={savingName}
+                  onPress={handleSaveCircleName}
+                  style={styles.modalSaveBtn}
+                />
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -1047,7 +1064,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     headerShareBtn: {
       width: 36,
@@ -1063,11 +1080,9 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      backgroundColor: colors.surface,
+      backgroundColor: 'transparent',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderLight,
     },
     topInfoLeft: {
       flexDirection: 'row',
@@ -1153,7 +1168,7 @@ const getStyles = (colors: ThemeColors) =>
       paddingHorizontal: 16,
       paddingTop: 12,
       paddingBottom: 6,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     quickDock: {
       flexDirection: 'row',
@@ -1238,7 +1253,7 @@ const getStyles = (colors: ThemeColors) =>
     segmentedTabBarWrapper: {
       paddingHorizontal: 16,
       paddingVertical: 6,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     segmentedTabBar: {
       flexDirection: 'row',
@@ -1283,7 +1298,7 @@ const getStyles = (colors: ThemeColors) =>
       paddingHorizontal: 16,
       paddingTop: 6,
       paddingBottom: 8,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     searchBox: {
       flexDirection: 'row',

@@ -275,7 +275,7 @@ const getStyles = (colors: ThemeColors) =>
       elevation: 2,
     },
     paidContainer: {
-      borderColor: 'rgba(16, 185, 129, 0.25)',
+      borderColor: colors.border,
       backgroundColor: colors.surface,
     },
     header: {

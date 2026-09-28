@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,14 +18,18 @@ import { Header } from '../components/common/Header';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores/authStore';
 import { jastipApi } from '../api/jastip.api';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type CreateSessionRouteProp = RouteProp<RootStackParamList, 'CreateSession'>;
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'CreateSession'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'CreateSession'
+>;
 
 export const CreateSessionScreen: React.FC = () => {
   const route = useRoute<CreateSessionRouteProp>();
   const navigation = useNavigation<NavigationProp>();
-  const currentUser = useAuthStore((state) => state.currentUser);
+  const currentUser = useAuthStore(state => state.currentUser);
   const colors = useThemeColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
@@ -77,70 +88,74 @@ export const CreateSessionScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header
-        title="Buka Sesi Jastip"
-        subtitle={`Untuk Sirkel: ${circleName}`}
-        onBack={() => navigation.goBack()}
-      />
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <Header
+          title="Buka Sesi Jastip"
+          subtitle={`Untuk Sirkel: ${circleName}`}
+          onBack={() => navigation.goBack()}
+        />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.heading}>Lagi Mau Keluar Belanja?</Text>
-          <Text style={styles.subtitle}>
-            Beri tahu teman-teman sirkel ke mana kamu pergi. Mereka bisa menitipkan pesanan di keranjang bersama.
-          </Text>
-
-          {error ? (
-            <View style={styles.errorBox}>
-              <AlertCircle size={15} color={colors.danger} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
-
-          <Input
-            label="Tujuan / Tempat Belanja"
-            placeholder="Contoh: Kopi Kenangan / Superindo / Mie Gacoan"
-            value={lokasi}
-            onChangeText={(text) => {
-              setLokasi(text);
-              if (error) setError('');
-            }}
-          />
-
-          <Input
-            label="Tarif Flat Jastip (Rp per penitip)"
-            placeholder="Contoh: 5.000"
-            keyboardType="numeric"
-            value={tarifJastip}
-            onChangeText={handleTarifChange}
-          />
-
-          <View style={styles.infoBox}>
-            <View style={styles.infoHeaderRow}>
-              <Info size={16} color={colors.primary} />
-              <Text style={styles.infoTitle}>Info Transparansi Jastip:</Text>
-            </View>
-            <Text style={styles.infoText}>
-              • Tarif ini flat dikenakan satu kali kepada setiap teman yang menitip.{'\n'}
-              • Harga barang asli di kasir akan kamu masukkan saat sesi dikunci.
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.container}
+        >
+          <ScrollView contentContainerStyle={styles.content}>
+            <Text style={styles.heading}>Lagi Mau Keluar Belanja?</Text>
+            <Text style={styles.subtitle}>
+              Beri tahu teman-teman sirkel ke mana kamu pergi. Mereka bisa
+              menitipkan pesanan di keranjang bersama.
             </Text>
-          </View>
 
-          <Button
-            title="Buka Sesi Jastip Sekarang"
-            variant="primary"
-            size="lg"
-            loading={loading}
-            onPress={handleCreate}
-            style={styles.submitBtn}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            {error ? (
+              <View style={styles.errorBox}>
+                <AlertCircle size={15} color={colors.danger} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            <Input
+              label="Tujuan / Tempat Belanja"
+              placeholder="Contoh: Kopi Kenangan / Superindo / Mie Gacoan"
+              value={lokasi}
+              onChangeText={text => {
+                setLokasi(text);
+                if (error) setError('');
+              }}
+            />
+
+            <Input
+              label="Tarif Flat Jastip (Rp per penitip)"
+              placeholder="Contoh: 5.000"
+              keyboardType="numeric"
+              value={tarifJastip}
+              onChangeText={handleTarifChange}
+            />
+
+            <View style={styles.infoBox}>
+              <View style={styles.infoHeaderRow}>
+                <Info size={16} color={colors.primary} />
+                <Text style={styles.infoTitle}>Info Transparansi Jastip:</Text>
+              </View>
+              <Text style={styles.infoText}>
+                • Tarif ini flat dikenakan satu kali kepada setiap teman yang
+                menitip.{'\n'}• Harga barang asli di kasir akan kamu masukkan
+                saat sesi dikunci.
+              </Text>
+            </View>
+
+            <Button
+              title="Buka Sesi Jastip Sekarang"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              onPress={handleCreate}
+              style={styles.submitBtn}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -148,7 +163,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     container: {
       flex: 1,

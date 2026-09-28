@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AlertCircle } from 'lucide-react-native';
@@ -10,9 +16,11 @@ import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores/authStore';
 import { circleApi } from '../api/circle.api';
 
+import { LinearGradientView } from '../components/common/LinearGradientView';
+
 export const JoinCircleModal: React.FC = () => {
   const navigation = useNavigation();
-  const currentUser = useAuthStore((state) => state.currentUser);
+  const currentUser = useAuthStore(state => state.currentUser);
   const colors = useThemeColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
@@ -33,55 +41,59 @@ export const JoinCircleModal: React.FC = () => {
       await circleApi.joinCircle(kodeJoin.trim().toUpperCase(), currentUser.id);
       navigation.goBack();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Gagal bergabung ke sirkel');
+      setError(
+        err instanceof Error ? err.message : 'Gagal bergabung ke sirkel',
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header title="Gabung Sirkel" onBack={() => navigation.goBack()} />
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <Header title="Gabung Sirkel" onBack={() => navigation.goBack()} transparent />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <View style={styles.content}>
-          <Text style={styles.heading}>Masukkan Kode Sirkel</Text>
-          <Text style={styles.subtitle}>
-            Minta 6 karakter kode join unik dari teman atau pemilik sirkel.
-          </Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.container}
+        >
+          <View style={styles.content}>
+            <Text style={styles.heading}>Masukkan Kode Sirkel</Text>
+            <Text style={styles.subtitle}>
+              Minta 6 karakter kode join unik dari teman atau pemilik sirkel.
+            </Text>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <AlertCircle size={15} color={colors.danger} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
+            {error ? (
+              <View style={styles.errorBox}>
+                <AlertCircle size={15} color={colors.danger} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
 
-          <Input
-            label="Kode Join"
-            placeholder="Contoh: KOS123"
-            autoCapitalize="characters"
-            value={kodeJoin}
-            onChangeText={(text) => {
-              setKodeJoin(text.toUpperCase());
-              if (error) setError('');
-            }}
-          />
+            <Input
+              label="Kode Join"
+              placeholder="Contoh: KOS123"
+              autoCapitalize="characters"
+              value={kodeJoin}
+              onChangeText={text => {
+                setKodeJoin(text.toUpperCase());
+                if (error) setError('');
+              }}
+            />
 
-          <Button
-            title="Gabung ke Sirkel"
-            variant="primary"
-            size="lg"
-            loading={loading}
-            onPress={handleJoin}
-            style={styles.submitBtn}
-          />
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <Button
+              title="Gabung ke Sirkel"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              onPress={handleJoin}
+              style={styles.submitBtn}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -89,7 +101,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     container: {
       flex: 1,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet, StatusBar, Platform } from 'react-native';
+import { StatusBar, Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
@@ -22,22 +22,25 @@ import {
   PaymentSettingsScreen,
   SecuritySettingsScreen,
   MyCirclesScreen,
+  SplashScreen,
 } from '../screens';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
+  const [isSplashDone, setIsSplashDone] = React.useState(false);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const colors = useThemeColors();
 
-  // While restoring session from AsyncStorage, display a clean splash/loading indicator
-  if (!isHydrated) {
+  // Display polished animated splash screen on app cold start & during hydration
+  if (!isSplashDone) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <SplashScreen
+        isReady={isHydrated}
+        onFinish={() => setIsSplashDone(true)}
+      />
     );
   }
 
@@ -108,11 +111,3 @@ export const AppNavigator: React.FC = () => {
     </NavigationContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

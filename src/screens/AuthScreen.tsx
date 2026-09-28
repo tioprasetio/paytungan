@@ -16,6 +16,7 @@ import { useThemeColors, ThemeColors } from '../theme/colors';
 import { authApi } from '../api';
 import { useAuthStore } from '../stores';
 import { useAlert } from '../context/AlertContext';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type AuthMode = 'LOGIN' | 'REGISTER';
 
@@ -223,214 +224,218 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.container}
         >
-          {/* Header Brand */}
-          <View style={styles.heroSection}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoP}>P</Text>
-            </View>
-            <Text style={styles.brandTitle}>PayTungan</Text>
-            <Text style={styles.brandSubtitle}>
-              Social Split-Bill & Group Errand App
-            </Text>
-          </View>
-
-          {/* Form Card */}
-          <View style={styles.formCard}>
-            {/* Tab Switcher: Masuk vs Daftar */}
-            <View style={styles.tabContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  mode === 'LOGIN' && styles.tabButtonActive,
-                ]}
-                onPress={() => handleSwitchMode('LOGIN')}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    mode === 'LOGIN' && styles.tabTextActive,
-                  ]}
-                >
-                  Masuk
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  mode === 'REGISTER' && styles.tabButtonActive,
-                ]}
-                onPress={() => handleSwitchMode('REGISTER')}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    mode === 'REGISTER' && styles.tabTextActive,
-                  ]}
-                >
-                  Daftar Akun
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.cardTitle}>
-              {mode === 'LOGIN'
-                ? 'Selamat Datang Kembali 👋'
-                : 'Buat Akun Baru ✨'}
-            </Text>
-            <Text style={styles.cardSubtitle}>
-              {mode === 'LOGIN'
-                ? 'Masuk dengan Nomor WhatsApp dan PIN 6-digit keamanan akun kamu.'
-                : 'Daftarkan nama, nomor WhatsApp, dan buat PIN 6-digit untuk keamanan.'}
-            </Text>
-
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>⚠️ {error}</Text>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Header Brand */}
+            <View style={styles.heroSection}>
+              <View style={styles.logoBadge}>
+                <Text style={styles.logoP}>P</Text>
               </View>
-            ) : null}
+              <Text style={styles.brandTitle}>PayTungan</Text>
+              <Text style={styles.brandSubtitle}>
+                Social Split-Bill & Group Errand App
+              </Text>
+            </View>
 
-            {/* Field Nama (Hanya di mode Register) */}
-            {mode === 'REGISTER' && (
-              <Input
-                label="Nama Lengkap"
-                placeholder="misal: Alex Chandra"
-                value={nama}
-                onChangeText={text => {
-                  setNama(text);
-                  if (error) setError('');
-                }}
-              />
-            )}
-
-            {/* Field WhatsApp */}
-            <Input
-              label="Nomor WhatsApp"
-              placeholder="misal: 081234567890"
-              keyboardType="phone-pad"
-              value={noWhatsapp}
-              onChangeText={text => {
-                setNoWhatsapp(text);
-                if (error) setError('');
-              }}
-            />
-
-            {/* Field PIN */}
-            <View style={styles.pinWrapper}>
-              <View style={styles.pinHeader}>
-                <Text style={styles.fieldLabel}>
-                  {mode === 'REGISTER'
-                    ? 'Buat PIN Keamanan (6 Digit)'
-                    : 'PIN Keamanan (6 Digit)'}
-                </Text>
+            {/* Form Card */}
+            <View style={styles.formCard}>
+              {/* Tab Switcher: Masuk vs Daftar */}
+              <View style={styles.tabContainer}>
                 <TouchableOpacity
-                  style={styles.showPinBtn}
-                  onPress={() => setShowPin(!showPin)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  activeOpacity={0.7}
+                  style={[
+                    styles.tabButton,
+                    mode === 'LOGIN' && styles.tabButtonActive,
+                  ]}
+                  onPress={() => handleSwitchMode('LOGIN')}
+                  activeOpacity={0.8}
                 >
-                  {showPin ? (
-                    <EyeOff size={16} color={colors.textSecondary} />
-                  ) : (
-                    <Eye size={16} color={colors.primary} />
-                  )}
                   <Text
                     style={[
-                      styles.showPinText,
-                      !showPin && styles.showPinTextPrimary,
+                      styles.tabText,
+                      mode === 'LOGIN' && styles.tabTextActive,
                     ]}
                   >
-                    {showPin ? 'Sembunyikan' : 'Lihat PIN'}
+                    Masuk
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.tabButton,
+                    mode === 'REGISTER' && styles.tabButtonActive,
+                  ]}
+                  onPress={() => handleSwitchMode('REGISTER')}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.tabText,
+                      mode === 'REGISTER' && styles.tabTextActive,
+                    ]}
+                  >
+                    Daftar Akun
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              <Text style={styles.cardTitle}>
+                {mode === 'LOGIN'
+                  ? 'Selamat Datang Kembali 👋'
+                  : 'Buat Akun Baru ✨'}
+              </Text>
+              <Text style={styles.cardSubtitle}>
+                {mode === 'LOGIN'
+                  ? 'Masuk dengan Nomor WhatsApp dan PIN 6-digit keamanan akun kamu.'
+                  : 'Daftarkan nama, nomor WhatsApp, dan buat PIN 6-digit untuk keamanan.'}
+              </Text>
+
+              {error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>⚠️ {error}</Text>
+                </View>
+              ) : null}
+
+              {/* Field Nama (Hanya di mode Register) */}
+              {mode === 'REGISTER' && (
+                <Input
+                  label="Nama Lengkap"
+                  placeholder="misal: Alex Chandra"
+                  value={nama}
+                  onChangeText={text => {
+                    setNama(text);
+                    if (error) setError('');
+                  }}
+                />
+              )}
+
+              {/* Field WhatsApp */}
               <Input
-                placeholder="● ● ● ● ● ● (6 digit angka)"
-                keyboardType="numeric"
-                maxLength={6}
-                secureTextEntry={!showPin}
-                value={pin}
+                label="Nomor WhatsApp"
+                placeholder="misal: 081234567890"
+                keyboardType="phone-pad"
+                value={noWhatsapp}
                 onChangeText={text => {
-                  const numericOnly = text.replace(/[^0-9]/g, '');
-                  setPin(numericOnly);
+                  setNoWhatsapp(text);
                   if (error) setError('');
                 }}
-                containerStyle={styles.pinInputContainer}
               />
-            </View>
 
-            {/* Field Konfirmasi PIN (Hanya di mode Register) */}
-            {mode === 'REGISTER' && (
+              {/* Field PIN */}
               <View style={styles.pinWrapper}>
-                <Text style={styles.fieldLabel}>Konfirmasi PIN (6 Digit)</Text>
+                <View style={styles.pinHeader}>
+                  <Text style={styles.fieldLabel}>
+                    {mode === 'REGISTER'
+                      ? 'Buat PIN Keamanan (6 Digit)'
+                      : 'PIN Keamanan (6 Digit)'}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.showPinBtn}
+                    onPress={() => setShowPin(!showPin)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
+                  >
+                    {showPin ? (
+                      <EyeOff size={16} color={colors.textSecondary} />
+                    ) : (
+                      <Eye size={16} color={colors.primary} />
+                    )}
+                    <Text
+                      style={[
+                        styles.showPinText,
+                        !showPin && styles.showPinTextPrimary,
+                      ]}
+                    >
+                      {showPin ? 'Sembunyikan' : 'Lihat PIN'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Input
-                  placeholder="Ulangi 6 digit PIN kamu"
+                  placeholder="● ● ● ● ● ● (6 digit angka)"
                   keyboardType="numeric"
                   maxLength={6}
                   secureTextEntry={!showPin}
-                  value={confirmPin}
+                  value={pin}
                   onChangeText={text => {
                     const numericOnly = text.replace(/[^0-9]/g, '');
-                    setConfirmPin(numericOnly);
+                    setPin(numericOnly);
                     if (error) setError('');
                   }}
                   containerStyle={styles.pinInputContainer}
                 />
               </View>
-            )}
 
-            <Button
-              title={
-                mode === 'LOGIN'
-                  ? 'Masuk ke PayTungan →'
-                  : 'Selesaikan & Buat Akun →'
-              }
-              size="lg"
-              loading={loading}
-              onPress={handleSubmit}
-              style={styles.actionBtn}
-            />
+              {/* Field Konfirmasi PIN (Hanya di mode Register) */}
+              {mode === 'REGISTER' && (
+                <View style={styles.pinWrapper}>
+                  <Text style={styles.fieldLabel}>
+                    Konfirmasi PIN (6 Digit)
+                  </Text>
+                  <Input
+                    placeholder="Ulangi 6 digit PIN kamu"
+                    keyboardType="numeric"
+                    maxLength={6}
+                    secureTextEntry={!showPin}
+                    value={confirmPin}
+                    onChangeText={text => {
+                      const numericOnly = text.replace(/[^0-9]/g, '');
+                      setConfirmPin(numericOnly);
+                      if (error) setError('');
+                    }}
+                    containerStyle={styles.pinInputContainer}
+                  />
+                </View>
+              )}
 
-            {/* Toggle Footer Link */}
-            <TouchableOpacity
-              style={styles.switchModeFooter}
-              onPress={() =>
-                handleSwitchMode(mode === 'LOGIN' ? 'REGISTER' : 'LOGIN')
-              }
-              activeOpacity={0.7}
-            >
-              <Text style={styles.switchModeText}>
-                {mode === 'LOGIN' ? (
-                  <>
-                    Belum punya akun?{' '}
-                    <Text style={styles.switchModeHighlight}>
-                      Daftar Sekarang
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    Sudah memiliki akun?{' '}
-                    <Text style={styles.switchModeHighlight}>
-                      Masuk di Sini
-                    </Text>
-                  </>
-                )}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              <Button
+                title={
+                  mode === 'LOGIN'
+                    ? 'Masuk ke PayTungan →'
+                    : 'Selesaikan & Buat Akun →'
+                }
+                size="lg"
+                loading={loading}
+                onPress={handleSubmit}
+                style={styles.actionBtn}
+              />
+
+              {/* Toggle Footer Link */}
+              <TouchableOpacity
+                style={styles.switchModeFooter}
+                onPress={() =>
+                  handleSwitchMode(mode === 'LOGIN' ? 'REGISTER' : 'LOGIN')
+                }
+                activeOpacity={0.7}
+              >
+                <Text style={styles.switchModeText}>
+                  {mode === 'LOGIN' ? (
+                    <>
+                      Belum punya akun?{' '}
+                      <Text style={styles.switchModeHighlight}>
+                        Daftar Sekarang
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      Sudah memiliki akun?{' '}
+                      <Text style={styles.switchModeHighlight}>
+                        Masuk di Sini
+                      </Text>
+                    </>
+                  )}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -438,7 +443,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     container: {
       flex: 1,

@@ -20,6 +20,7 @@ import { JastipSession } from '../types';
 import { Header, Card, Button, AvatarStack } from '../components/common';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import { Plus, KeyRound, Search, ChevronRight, X } from 'lucide-react-native';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 const CIRCLE_THEMES = [
   { bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
@@ -107,12 +108,14 @@ export const MyCirclesScreen: React.FC = () => {
   }, [circles, activeTab, searchQuery, currentUser?.id]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <Header
-        title="Sirkel Saya"
-        subtitle={`${circles.length} sirkel terdaftar`}
-        onBack={() => navigation.goBack()}
-      />
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <Header
+          title="Sirkel Saya"
+          subtitle={`${circles.length} sirkel terdaftar`}
+          onBack={() => navigation.goBack()}
+          transparent
+        />
 
       <View style={styles.container}>
         {/* Search Input */}
@@ -359,6 +362,7 @@ export const MyCirclesScreen: React.FC = () => {
         </ScrollView>
       </View>
     </SafeAreaView>
+  </LinearGradientView>
   );
 };
 
@@ -366,7 +370,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     container: {
       flex: 1,

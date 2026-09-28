@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,10 @@ import { RootStackParamList } from '../navigation/types';
 import { useAuthStore } from '../stores';
 import { authApi } from '../api';
 import { Header, Input, Button, Card } from '../components/common';
-import { Colors, useThemeColors } from '../theme/colors';
+import { ThemeColors, useThemeColors } from '../theme/colors';
 import { useAlert } from '../context/AlertContext';
 import { User, Lock } from 'lucide-react-native';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -28,6 +29,8 @@ export const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { currentUser, updateUser } = useAuthStore();
   const { showWarning, showError, showSuccess } = useAlert();
+  const colors = useThemeColors();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [nama, setNama] = useState(currentUser?.nama || '');
   const [saving, setSaving] = useState(false);
@@ -74,15 +77,17 @@ export const EditProfileScreen: React.FC = () => {
     .charAt(0)
     .toUpperCase();
 
-  const colors = useThemeColors();
-
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <Header
-        title="Informasi Profil"
-        subtitle="Kelola identitas akun kamu"
-        onBack={() => navigation.goBack()}
-      />
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: 'transparent' }]}
+      >
+        <Header
+          title="Informasi Profil"
+          subtitle="Kelola identitas akun kamu"
+          onBack={() => navigation.goBack()}
+          transparent
+        />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -95,10 +100,19 @@ export const EditProfileScreen: React.FC = () => {
         >
           {/* Avatar Preview */}
           <View style={styles.avatarSection}>
-            <View style={[styles.avatarCircle, { backgroundColor: colors.primaryLight }]}>
-              <Text style={[styles.avatarText, { color: colors.primary }]}>{userInitial}</Text>
+            <View
+              style={[
+                styles.avatarCircle,
+                { backgroundColor: colors.primaryLight },
+              ]}
+            >
+              <Text style={[styles.avatarText, { color: colors.primary }]}>
+                {userInitial}
+              </Text>
             </View>
-            <Text style={[styles.avatarTitle, { color: colors.textPrimary }]}>{currentUser?.nama}</Text>
+            <Text style={[styles.avatarTitle, { color: colors.textPrimary }]}>
+              {currentUser?.nama}
+            </Text>
             <Text style={[styles.avatarSub, { color: colors.textSecondary }]}>
               ID Pengguna: #{currentUser?.id}
             </Text>
@@ -115,11 +129,18 @@ export const EditProfileScreen: React.FC = () => {
             ]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: colors.primaryLight }]}>
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: colors.primaryLight },
+                ]}
+              >
                 <User size={18} color={colors.primary} />
               </View>
               <View style={styles.cardHeaderText}>
-                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Nama Tampilan</Text>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+                  Nama Tampilan
+                </Text>
                 <Text style={[styles.cardSub, { color: colors.textSecondary }]}>
                   Nama ini akan terlihat oleh teman sirkel jastip
                 </Text>
@@ -136,7 +157,11 @@ export const EditProfileScreen: React.FC = () => {
 
             {/* Read-Only WhatsApp Box */}
             <View style={styles.readOnlyContainer}>
-              <Text style={[styles.readOnlyLabel, { color: colors.textPrimary }]}>Nomor WhatsApp</Text>
+              <Text
+                style={[styles.readOnlyLabel, { color: colors.textPrimary }]}
+              >
+                Nomor WhatsApp
+              </Text>
               <View
                 style={[
                   styles.readOnlyBox,
@@ -146,7 +171,9 @@ export const EditProfileScreen: React.FC = () => {
                   },
                 ]}
               >
-                <Text style={[styles.readOnlyValue, { color: colors.textPrimary }]}>
+                <Text
+                  style={[styles.readOnlyValue, { color: colors.textPrimary }]}
+                >
                   {currentUser?.no_whatsapp}
                 </Text>
                 <View style={styles.lockedPill}>
@@ -168,145 +195,151 @@ export const EditProfileScreen: React.FC = () => {
               onPress={handleSave}
               disabled={nama.trim() === currentUser?.nama}
               style={styles.saveBtn}
+              textStyle={styles.saveBtnText}
             />
           </Card>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  </LinearGradientView>
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  flexOne: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    marginBottom: 8,
-  },
-  avatarCircle: {
-    width: 74,
-    height: 74,
-    borderRadius: 24,
-    backgroundColor: Colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(79, 70, 229, 0.2)',
-    marginBottom: 10,
-  },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: Colors.primary,
-  },
-  avatarTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  avatarSub: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  formCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.07)',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardHeaderText: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  cardSub: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  readOnlyContainer: {
-    marginBottom: 20,
-  },
-  readOnlyLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    marginBottom: 6,
-  },
-  readOnlyBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  readOnlyValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  lockedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E2E8F0',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    gap: 4,
-  },
-  lockedPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  readOnlyHint: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    lineHeight: 16,
-    marginTop: 6,
-  },
-  saveBtn: {
-    borderRadius: 14,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    flexOne: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      paddingVertical: 20,
+      marginBottom: 8,
+    },
+    avatarCircle: {
+      width: 74,
+      height: 74,
+      borderRadius: 24,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: 'rgba(79, 70, 229, 0.2)',
+      marginBottom: 10,
+    },
+    avatarText: {
+      fontSize: 28,
+      fontWeight: '900',
+      color: colors.primary,
+    },
+    avatarTitle: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    avatarSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    formCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: 'rgba(15, 23, 42, 0.07)',
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 12,
+    },
+    iconBox: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cardHeaderText: {
+      flex: 1,
+    },
+    cardTitle: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    cardSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    inputContainer: {
+      marginBottom: 16,
+    },
+    readOnlyContainer: {
+      marginBottom: 20,
+    },
+    readOnlyLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 6,
+    },
+    readOnlyBox: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: 'rgba(15, 23, 42, 0.08)',
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    readOnlyValue: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    lockedPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#E2E8F0',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      gap: 4,
+    },
+    lockedPillText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    readOnlyHint: {
+      fontSize: 11,
+      color: colors.textMuted,
+      lineHeight: 16,
+      marginTop: 6,
+    },
+    saveBtn: {
+      borderRadius: 14,
+    },
+    saveBtnText: {
+      color: colors.textInverse, // <-- Pindah ke sini
+    },
+  });

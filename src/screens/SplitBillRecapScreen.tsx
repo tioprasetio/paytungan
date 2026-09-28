@@ -36,6 +36,7 @@ import {
   Users,
   Check,
 } from 'lucide-react-native';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type SplitBillRecapRouteProp = RouteProp<RootStackParamList, 'SplitBillRecap'>;
 type NavigationProp = NativeStackNavigationProp<
@@ -161,12 +162,14 @@ export const SplitBillRecapScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header
-        title="Rekap Split Bill"
-        subtitle={recap?.lokasi ? `Lokasi: ${recap.lokasi}` : undefined}
-        onBack={() => navigation.goBack()}
-        rightAction={
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <Header
+          title="Rekap Split Bill"
+          subtitle={recap?.lokasi ? `Lokasi: ${recap.lokasi}` : undefined}
+          onBack={() => navigation.goBack()}
+          transparent
+          rightAction={
           <TouchableOpacity
             style={styles.headerShareBtn}
             onPress={handleShareWhatsApp}
@@ -619,6 +622,7 @@ export const SplitBillRecapScreen: React.FC = () => {
         />
       )}
     </SafeAreaView>
+  </LinearGradientView>
   );
 };
 
@@ -626,7 +630,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     headerShareBtn: {
       width: 36,

@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AlertCircle } from 'lucide-react-native';
@@ -9,10 +15,11 @@ import { Header } from '../components/common/Header';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores/authStore';
 import { circleApi } from '../api/circle.api';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 export const CreateCircleModal: React.FC = () => {
   const navigation = useNavigation();
-  const currentUser = useAuthStore((state) => state.currentUser);
+  const currentUser = useAuthStore(state => state.currentUser);
   const colors = useThemeColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
@@ -40,47 +47,50 @@ export const CreateCircleModal: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header title="Buat Sirkel Baru" onBack={() => navigation.goBack()} />
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <Header title="Buat Sirkel Baru" onBack={() => navigation.goBack()} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <View style={styles.content}>
-          <Text style={styles.heading}>Bikin Grup Jastipmu</Text>
-          <Text style={styles.subtitle}>
-            Sirkel adalah ruang bersama teman kantor, kos, atau keluarga untuk saling titip barang.
-          </Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.container}
+        >
+          <View style={styles.content}>
+            <Text style={styles.heading}>Bikin Grup Jastipmu</Text>
+            <Text style={styles.subtitle}>
+              Sirkel adalah ruang bersama teman kantor, kos, atau keluarga untuk
+              saling titip barang.
+            </Text>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <AlertCircle size={15} color={colors.danger} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
+            {error ? (
+              <View style={styles.errorBox}>
+                <AlertCircle size={15} color={colors.danger} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
 
-          <Input
-            label="Nama Sirkel"
-            placeholder="Contoh: Teman Kantor Lantai 3 / Geng Kosan"
-            value={namaSirkel}
-            onChangeText={(text) => {
-              setNamaSirkel(text);
-              if (error) setError('');
-            }}
-          />
+            <Input
+              label="Nama Sirkel"
+              placeholder="Contoh: Teman Kantor Lantai 3 / Geng Kosan"
+              value={namaSirkel}
+              onChangeText={text => {
+                setNamaSirkel(text);
+                if (error) setError('');
+              }}
+            />
 
-          <Button
-            title="Buat Sirkel Sekarang"
-            variant="primary"
-            size="lg"
-            loading={loading}
-            onPress={handleCreate}
-            style={styles.submitBtn}
-          />
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <Button
+              title="Buat Sirkel Sekarang"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              onPress={handleCreate}
+              style={styles.submitBtn}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -88,7 +98,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     container: {
       flex: 1,

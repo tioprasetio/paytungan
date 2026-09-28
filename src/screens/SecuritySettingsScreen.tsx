@@ -19,6 +19,7 @@ import { Header, Input, Button, Card } from '../components/common';
 import { Colors, useThemeColors } from '../theme/colors';
 import { useAlert } from '../context/AlertContext';
 import { KeyRound, ShieldCheck, Eye, EyeOff, ShieldAlert } from 'lucide-react-native';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SecuritySettings'>;
 
@@ -114,12 +115,14 @@ export const SecuritySettingsScreen: React.FC = () => {
   const colors = useThemeColors();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <Header
-        title="Keamanan PIN"
-        subtitle="PIN 6-digit untuk otentikasi akun"
-        onBack={() => navigation.goBack()}
-      />
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: 'transparent' }]}>
+        <Header
+          title="Keamanan PIN"
+          subtitle="PIN 6-digit untuk otentikasi akun"
+          onBack={() => navigation.goBack()}
+          transparent
+        />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -253,6 +256,7 @@ export const SecuritySettingsScreen: React.FC = () => {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  </LinearGradientView>
   );
 };
 

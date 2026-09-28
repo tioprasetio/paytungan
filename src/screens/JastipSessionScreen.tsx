@@ -8,23 +8,36 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import {
+  RouteProp,
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { Header, Badge, Button } from '../components/common';
-import { BlindCartItem, AddItemModal, SessionTimer } from '../components/jastip';
+import {
+  BlindCartItem,
+  AddItemModal,
+  SessionTimer,
+} from '../components/jastip';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import { useAuthStore } from '../stores';
 import { useJastipSession } from '../hooks';
 import { useAlert } from '../context/AlertContext';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 type JastipSessionRouteProp = RouteProp<RootStackParamList, 'JastipSession'>;
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'JastipSession'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'JastipSession'
+>;
 
 export const JastipSessionScreen: React.FC = () => {
   const route = useRoute<JastipSessionRouteProp>();
   const navigation = useNavigation<NavigationProp>();
-  const currentUser = useAuthStore((state) => state.currentUser);
+  const currentUser = useAuthStore(state => state.currentUser);
   const colors = useThemeColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { showConfirm, showError, showWarning } = useAlert();
@@ -50,7 +63,7 @@ export const JastipSessionScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       loadSession();
-    }, [loadSession])
+    }, [loadSession]),
   );
 
   const isBuyer = currentSession?.creatorId === currentUser?.id;
@@ -65,7 +78,8 @@ export const JastipSessionScreen: React.FC = () => {
     }
 
     const checkTime = () => {
-      const expired = new Date(currentSession.waktu_tutup!).getTime() <= Date.now();
+      const expired =
+        new Date(currentSession.waktu_tutup!).getTime() <= Date.now();
       setIsTimeExpired(expired);
     };
 
@@ -76,17 +90,26 @@ export const JastipSessionScreen: React.FC = () => {
 
   // Calculate totals and distinct requesters
   const uniqueRequesters = new Set(
-    items.filter((it) => it.userId !== currentSession?.creatorId).map((it) => it.userId)
+    items
+      .filter(it => it.userId !== currentSession?.creatorId)
+      .map(it => it.userId),
   );
   const requestersCount = uniqueRequesters.size;
-  const estimatedErrandEarnings = requestersCount * (currentSession?.tarif_jastip || 0);
+  const estimatedErrandEarnings =
+    requestersCount * (currentSession?.tarif_jastip || 0);
 
-  const totalItemCost = items.reduce((acc, it) => acc + (it.harga_final || 0), 0);
-  const myItems = items.filter((it) => it.userId === currentUser?.id);
-  const myItemCost = myItems.reduce((acc, it) => acc + (it.harga_final || 0), 0);
+  const totalItemCost = items.reduce(
+    (acc, it) => acc + (it.harga_final || 0),
+    0,
+  );
+  const myItems = items.filter(it => it.userId === currentUser?.id);
+  const myItemCost = myItems.reduce(
+    (acc, it) => acc + (it.harga_final || 0),
+    0,
+  );
   const myShare = isBuyer
     ? 0
-    : myItemCost + (myItems.length > 0 ? (currentSession?.tarif_jastip || 0) : 0);
+    : myItemCost + (myItems.length > 0 ? currentSession?.tarif_jastip || 0 : 0);
 
   const handleExtendTime = (mins: number) => {
     showConfirm(
@@ -97,14 +120,17 @@ export const JastipSessionScreen: React.FC = () => {
           setExtending(true);
           await extendTime(mins);
         } catch (err: unknown) {
-          showError('Gagal Memperpanjang Waktu', err instanceof Error ? err.message : 'Gagal memperpanjang waktu');
+          showError(
+            'Gagal Memperpanjang Waktu',
+            err instanceof Error ? err.message : 'Gagal memperpanjang waktu',
+          );
         } finally {
           setExtending(false);
         }
       },
       undefined,
       `+${mins} Menit`,
-      'Batal'
+      'Batal',
     );
   };
 
@@ -122,7 +148,10 @@ export const JastipSessionScreen: React.FC = () => {
             lokasi: currentSession?.lokasi || lokasi,
           });
         } catch (err: unknown) {
-          showError('Gagal Mengunci Sesi', err instanceof Error ? err.message : 'Gagal mengunci sesi');
+          showError(
+            'Gagal Mengunci Sesi',
+            err instanceof Error ? err.message : 'Gagal mengunci sesi',
+          );
         } finally {
           setLocking(false);
         }
@@ -130,7 +159,7 @@ export const JastipSessionScreen: React.FC = () => {
       undefined,
       'Kunci Sesi',
       'Batal',
-      true
+      true,
     );
   };
 
@@ -138,7 +167,7 @@ export const JastipSessionScreen: React.FC = () => {
     if (isTimeExpired) {
       showWarning(
         'Waktu Titip Habis',
-        'Waktu menitip pesanan telah habis. Minta pembeli untuk memperpanjang sesi belanja.'
+        'Waktu menitip pesanan telah habis. Minta pembeli untuk memperpanjang sesi belanja.',
       );
       return;
     }
@@ -149,211 +178,230 @@ export const JastipSessionScreen: React.FC = () => {
     try {
       await removeItem(itemId);
     } catch (err: unknown) {
-      showError('Gagal Menghapus Barang', err instanceof Error ? err.message : 'Failed to remove item');
+      showError(
+        'Gagal Menghapus Barang',
+        err instanceof Error ? err.message : 'Failed to remove item',
+      );
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header
-        title="Keranjang"
-        subtitle={currentSession?.lokasi || lokasi}
-        onBack={() => navigation.goBack()}
-        rightAction={currentSession ? <Badge status={currentSession.status} /> : null}
-      />
-
-      <View style={styles.container}>
-        <FlatList
-          data={items}
-          keyExtractor={(item) => String(item.id)}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <View>
-              {/* Radial Countdown Timer */}
-              {isSessionOpen ? (
-                <SessionTimer
-                  waktuTutup={currentSession?.waktu_tutup}
-                  label="menitipkan pesanan barang"
-                  isLocked={!isSessionOpen}
-                  isBuyer={isBuyer}
-                  onExtendTime={handleExtendTime}
-                  extending={extending}
-                />
-              ) : null}
-
-              {/* Errand Fee Info Pill */}
-              <View style={styles.feeBanner}>
-                <View>
-                  <Text style={styles.feeTitle}>Biaya Jastip (Flat)</Text>
-                  <Text style={styles.feeSubtitle}>
-                    {isBuyer ? 'Pendapatan flat per penitip' : 'Dikenakan flat per penitip'}
-                  </Text>
-                </View>
-                <Text style={styles.feeAmount}>
-                  Rp {currentSession?.tarif_jastip.toLocaleString('id-ID') || '0'}
-                </Text>
-              </View>
-
-              {/* Items List Heading */}
-              <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>
-                  Permintaan Barang ({items.length})
-                </Text>
-                <View style={styles.liveTag}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>Keranjang</Text>
-                </View>
-              </View>
-            </View>
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <Header
+          title="Keranjang"
+          subtitle={currentSession?.lokasi || lokasi}
+          onBack={() => navigation.goBack()}
+          rightAction={
+            currentSession ? <Badge status={currentSession.status} /> : null
           }
-          ListEmptyComponent={
-            isLoading && items.length === 0 ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>Perbarui Keranjang...</Text>
-              </View>
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>🛒</Text>
-                <Text style={styles.emptyTitle}>Keranjang Masih Kosong</Text>
-                <Text style={styles.emptySub}>
-                  {isSessionOpen
-                    ? isBuyer
-                      ? 'Menunggu teman-teman sirkel menitip pesanan...'
-                      : 'Tekan tombol di bawah untuk menambah titipan barang kamu!'
-                    : 'Belum ada barang yang dititipkan pada sesi ini.'}
-                </Text>
-              </View>
-            )
-          }
-          renderItem={({ item }) => (
-            <BlindCartItem
-              item={item}
-              currentUserId={currentUser?.id || 0}
-              isBuyer={isBuyer}
-              canRemove={isSessionOpen}
-              onRemove={handleRemoveItem}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
         />
 
-        {/* Live Total & Split Calculation Summary */}
-        {items.length > 0 && (
-          <View style={styles.splitSummaryCard}>
-            <View style={styles.splitRow}>
-              <Text style={styles.splitLabel}>
-                {isBuyer ? 'Total Belanja Titipan:' : 'Total Belanja Sirkel:'}
-              </Text>
-              <Text style={styles.splitValue}>
-                {totalItemCost > 0
-                  ? `Rp ${totalItemCost.toLocaleString('id-ID')}`
-                  : 'Menunggu struk kasir'}
-              </Text>
-            </View>
-            <View style={[styles.splitRow, styles.splitRowTopSpace]}>
-              <Text style={styles.splitLabel}>
-                {isBuyer ? `Fee Jastip Kamu (${requestersCount} penitip):` : 'Tagihan Kamu:'}
-              </Text>
-              <Text style={isBuyer ? styles.buyerEarningValue : styles.myShareValue}>
-                {isBuyer
-                  ? `+Rp ${estimatedErrandEarnings.toLocaleString('id-ID')}`
-                  : myShare > 0
+        <View style={styles.container}>
+          <FlatList
+            data={items}
+            keyExtractor={item => String(item.id)}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              <View>
+                {/* Radial Countdown Timer */}
+                {isSessionOpen ? (
+                  <SessionTimer
+                    waktuTutup={currentSession?.waktu_tutup}
+                    label="menitipkan pesanan barang"
+                    isLocked={!isSessionOpen}
+                    isBuyer={isBuyer}
+                    onExtendTime={handleExtendTime}
+                    extending={extending}
+                  />
+                ) : null}
+
+                {/* Errand Fee Info Pill */}
+                <View style={styles.feeBanner}>
+                  <View>
+                    <Text style={styles.feeTitle}>Biaya Jastip (Flat)</Text>
+                    <Text style={styles.feeSubtitle}>
+                      {isBuyer
+                        ? 'Pendapatan flat per penitip'
+                        : 'Dikenakan flat per penitip'}
+                    </Text>
+                  </View>
+                  <Text style={styles.feeAmount}>
+                    Rp{' '}
+                    {currentSession?.tarif_jastip.toLocaleString('id-ID') ||
+                      '0'}
+                  </Text>
+                </View>
+
+                {/* Items List Heading */}
+                <View style={styles.listHeader}>
+                  <Text style={styles.listTitle}>
+                    Permintaan Barang ({items.length})
+                  </Text>
+                  <View style={styles.liveTag}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveText}>Keranjang</Text>
+                  </View>
+                </View>
+              </View>
+            }
+            ListEmptyComponent={
+              isLoading && items.length === 0 ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.loadingText}>Perbarui Keranjang...</Text>
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>🛒</Text>
+                  <Text style={styles.emptyTitle}>Keranjang Masih Kosong</Text>
+                  <Text style={styles.emptySub}>
+                    {isSessionOpen
+                      ? isBuyer
+                        ? 'Menunggu teman-teman sirkel menitip pesanan...'
+                        : 'Tekan tombol di bawah untuk menambah titipan barang kamu!'
+                      : 'Belum ada barang yang dititipkan pada sesi ini.'}
+                  </Text>
+                </View>
+              )
+            }
+            renderItem={({ item }) => (
+              <BlindCartItem
+                item={item}
+                currentUserId={currentUser?.id || 0}
+                isBuyer={isBuyer}
+                canRemove={isSessionOpen}
+                onRemove={handleRemoveItem}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+          />
+
+          {/* Live Total & Split Calculation Summary */}
+          {items.length > 0 && (
+            <View style={styles.splitSummaryCard}>
+              <View style={styles.splitRow}>
+                <Text style={styles.splitLabel}>
+                  {isBuyer ? 'Total Belanja Titipan:' : 'Total Belanja Sirkel:'}
+                </Text>
+                <Text style={styles.splitValue}>
+                  {totalItemCost > 0
+                    ? `Rp ${totalItemCost.toLocaleString('id-ID')}`
+                    : 'Menunggu struk kasir'}
+                </Text>
+              </View>
+              <View style={[styles.splitRow, styles.splitRowTopSpace]}>
+                <Text style={styles.splitLabel}>
+                  {isBuyer
+                    ? `Fee Jastip Kamu (${requestersCount} penitip):`
+                    : 'Tagihan Kamu:'}
+                </Text>
+                <Text
+                  style={
+                    isBuyer ? styles.buyerEarningValue : styles.myShareValue
+                  }
+                >
+                  {isBuyer
+                    ? `+Rp ${estimatedErrandEarnings.toLocaleString('id-ID')}`
+                    : myShare > 0
                     ? `Rp ${myShare.toLocaleString('id-ID')}`
                     : myItems.length > 0
-                      ? `${myItems.length} item (+Rp ${(currentSession?.tarif_jastip || 0).toLocaleString('id-ID')})`
-                      : 'Rp 0'}
-              </Text>
+                    ? `${myItems.length} item (+Rp ${(
+                        currentSession?.tarif_jastip || 0
+                      ).toLocaleString('id-ID')})`
+                    : 'Rp 0'}
+                </Text>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Sticky Action Panel */}
-        <View style={styles.bottomBar}>
-          {isSessionOpen ? (
-            isBuyer ? (
-              <TouchableOpacity
-                style={[styles.lockSessionBtn, locking && styles.btnDisabled]}
-                disabled={locking}
-                onPress={handleLock}
-              >
-                <Text style={styles.lockSessionBtnText}>
-                  {locking ? 'Mengunci...' : 'Kunci Keranjang (Lock Session)'}
-                </Text>
-              </TouchableOpacity>
-            ) : isTimeExpired ? (
-              <TouchableOpacity
-                style={[styles.requestItemBtn, styles.expiredRequestBtn]}
-                onPress={() =>
-                  showWarning(
-                    'Waktu Titip Habis',
-                    'Waktu menitip pesanan telah habis. Kamu bisa meminta pembeli (runner) untuk memperpanjang waktu jika masih belanja.'
-                  )
-                }
-              >
-                <Text style={styles.expiredRequestBtnText}>
-                  Waktu Titip Habis (Menunggu Runner)
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.requestItemBtn}
-                onPress={() => setModalVisible(true)}
-              >
-                <Text style={styles.requestItemBtnText}>
-                  + Titip Barang (Add Item Request)
-                </Text>
-              </TouchableOpacity>
-            )
-          ) : isSessionLocked ? (
-            <View style={styles.actionRow}>
-              {isBuyer ? (
-                <Button
-                  title="Input Harga Struk"
-                  variant="primary"
+          {/* Sticky Action Panel */}
+          <View style={styles.bottomBar}>
+            {isSessionOpen ? (
+              isBuyer ? (
+                <TouchableOpacity
+                  style={[styles.lockSessionBtn, locking && styles.btnDisabled]}
+                  disabled={locking}
+                  onPress={handleLock}
+                >
+                  <Text style={styles.lockSessionBtnText}>
+                    {locking ? 'Mengunci...' : 'Kunci Keranjang (Lock Session)'}
+                  </Text>
+                </TouchableOpacity>
+              ) : isTimeExpired ? (
+                <TouchableOpacity
+                  style={[styles.requestItemBtn, styles.expiredRequestBtn]}
                   onPress={() =>
-                    navigation.navigate('InputPrices', {
+                    showWarning(
+                      'Waktu Titip Habis',
+                      'Waktu menitip pesanan telah habis. Kamu bisa meminta pembeli (runner) untuk memperpanjang waktu jika masih belanja.',
+                    )
+                  }
+                >
+                  <Text style={styles.expiredRequestBtnText}>
+                    Waktu Titip Habis (Menunggu Runner)
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.requestItemBtn}
+                  onPress={() => setModalVisible(true)}
+                >
+                  <Text style={styles.requestItemBtnText}>
+                    + Titip Barang (Add Item Request)
+                  </Text>
+                </TouchableOpacity>
+              )
+            ) : isSessionLocked ? (
+              <View style={styles.actionRow}>
+                {isBuyer ? (
+                  <Button
+                    title="Input Harga Struk"
+                    variant="primary"
+                    onPress={() =>
+                      navigation.navigate('InputPrices', {
+                        sessionId,
+                        lokasi: currentSession?.lokasi || lokasi,
+                      })
+                    }
+                    style={styles.buyerLeftBtn}
+                  />
+                ) : null}
+                <Button
+                  title="Rekap Split Bill"
+                  variant="secondary"
+                  onPress={() =>
+                    navigation.navigate('SplitBillRecap', {
                       sessionId,
                       lokasi: currentSession?.lokasi || lokasi,
                     })
                   }
-                  style={styles.buyerLeftBtn}
+                  style={styles.fullFlexBtn}
                 />
-              ) : null}
+              </View>
+            ) : isSessionCompleted ? (
               <Button
-                title="Rekap Split Bill"
+                title="Lihat Rekap Pembayaran & Tagihan"
                 variant="secondary"
+                size="lg"
                 onPress={() =>
                   navigation.navigate('SplitBillRecap', {
                     sessionId,
                     lokasi: currentSession?.lokasi || lokasi,
                   })
                 }
-                style={styles.fullFlexBtn}
               />
-            </View>
-          ) : isSessionCompleted ? (
-            <Button
-              title="Lihat Rekap Pembayaran & Tagihan"
-              variant="secondary"
-              size="lg"
-              onPress={() =>
-                navigation.navigate('SplitBillRecap', {
-                  sessionId,
-                  lokasi: currentSession?.lokasi || lokasi,
-                })
-              }
-            />
-          ) : null}
+            ) : null}
+          </View>
         </View>
-      </View>
 
-      <AddItemModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSubmit={handleAddItem}
-      />
-    </SafeAreaView>
+        <AddItemModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSubmit={handleAddItem}
+        />
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -361,7 +409,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     container: {
       flex: 1,

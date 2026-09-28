@@ -36,6 +36,7 @@ import {
   CheckCircle2,
   Settings,
 } from 'lucide-react-native';
+import { LinearGradientView } from '../components/common/LinearGradientView';
 
 const CIRCLE_THEMES = [
   { bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
@@ -396,372 +397,380 @@ export const HomeScreen: React.FC = () => {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Opsi 2: Card Profile di Kiri & Settings Icon di Kanan */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.profileSnippet}
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitial}>
-              {currentUser?.nama?.charAt(0).toUpperCase() || 'U'}
-            </Text>
-          </View>
-          <View style={styles.profileTextWrap}>
-            <Text style={styles.greetingMini}>Hallo,</Text>
-            <Text style={styles.profileName} numberOfLines={1}>
-              {currentUser?.nama || 'User'} 👋
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.settingsIconBtn}
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.75}
-        >
-          <Settings size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => loadData(true)}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        {/* Floating Search Bar (hairline border + subtle shadow) */}
-        <View style={styles.searchBar}>
-          <Search
-            size={16}
-            color={colors.textMuted}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Cari sesi jastip, toko, teman..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery('')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <X size={15} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Quick Command Dock (Replaces generic 50/50 buttons) */}
-        <View style={styles.quickDock}>
+    <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        {/* Opsi 2: Card Profile di Kiri & Settings Icon di Kanan */}
+        <View style={styles.topBar}>
           <TouchableOpacity
-            style={styles.quickDockCardPrimary}
-            onPress={() => navigation.navigate('CreateCircle')}
-            activeOpacity={0.88}
+            style={styles.profileSnippet}
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.8}
           >
-            <View style={styles.quickIconCircleWhite}>
-              <Plus size={16} color={colors.primary} />
-            </View>
-            <View style={styles.quickDockInfo}>
-              <Text style={styles.quickDockTitleLight}>Buat Sirkel</Text>
-              <Text style={styles.quickDockSubLight}>Mulai grup belanja</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickDockCardSecondary}
-            onPress={() => navigation.navigate('JoinCircle')}
-            activeOpacity={0.88}
-          >
-            <View style={styles.quickIconCircleIndigo}>
-              <KeyRound size={16} color={colors.primary} />
-            </View>
-            <View style={styles.quickDockInfo}>
-              <Text style={styles.quickDockTitleDark}>Gabung Kode</Text>
-              <Text style={styles.quickDockSubDark}>Pake kode teman</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Dynamic Action Islands (No generic emoji banners) */}
-        {runnerPendingSession &&
-          (() => {
-            const pendingCount =
-              runnerPendingSession.payment_proofs?.filter(
-                p => p.status === 'PENDING',
-              ).length || 1;
-            return (
-              <TouchableOpacity
-                style={styles.actionIslandAmber}
-                onPress={() =>
-                  navigation.navigate('SplitBillRecap', {
-                    sessionId: runnerPendingSession.id,
-                    lokasi: runnerPendingSession.lokasi,
-                  })
-                }
-                activeOpacity={0.9}
-              >
-                <View style={styles.islandPulseAmber} />
-                <View style={styles.islandBody}>
-                  <Text style={styles.islandTitleAmber}>
-                    {pendingCount} Bukti Bayar Menunggu Konfirmasi
-                  </Text>
-                  <Text style={styles.islandSubAmber} numberOfLines={1}>
-                    Jastip {runnerPendingSession.lokasi} • Ketuk untuk
-                    verifikasi
-                  </Text>
-                </View>
-                <View style={styles.islandBtnAmber}>
-                  <Text style={styles.islandBtnTextAmber}>Periksa</Text>
-                  <ArrowUpRight size={13} color="#92400E" />
-                </View>
-              </TouchableOpacity>
-            );
-          })()}
-
-        {penitipUnpaidSession &&
-          (() => {
-            const items =
-              penitipUnpaidSession.items?.filter(
-                i => i.userId === currentUser?.id,
-              ) || [];
-            const myBill =
-              items.reduce((acc, i) => acc + (i.harga_final || 0), 0) +
-              (penitipUnpaidSession.tarif_jastip || 0);
-            return (
-              <TouchableOpacity
-                style={styles.actionIslandEmerald}
-                onPress={() =>
-                  navigation.navigate('SplitBillRecap', {
-                    sessionId: penitipUnpaidSession.id,
-                    lokasi: penitipUnpaidSession.lokasi,
-                  })
-                }
-                activeOpacity={0.9}
-              >
-                <View style={styles.islandPulseEmerald} />
-                <View style={styles.islandBody}>
-                  <Text style={styles.islandTitleEmerald}>
-                    Tagihan Siap Dibayar: Rp {myBill.toLocaleString('id-ID')}
-                  </Text>
-                  <Text style={styles.islandSubEmerald} numberOfLines={1}>
-                    Jastip {penitipUnpaidSession.lokasi} • Upload bukti transfer
-                  </Text>
-                </View>
-                <View style={styles.islandBtnEmerald}>
-                  <Text style={styles.islandBtnTextEmerald}>Bayar</Text>
-                  <ArrowUpRight size={13} color="#065F46" />
-                </View>
-              </TouchableOpacity>
-            );
-          })()}
-
-        {/* Sesi Jastip Section */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionHeaderLeft}>
-            <Text style={styles.sectionTitle}>Sesi Jastip Aktif</Text>
-            <View style={styles.liveCounterBadge}>
-              <Text style={styles.liveCounterText}>
-                {filteredSessions.length}
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarInitial}>
+                {currentUser?.nama?.charAt(0).toUpperCase() || 'U'}
               </Text>
             </View>
-          </View>
-          {filteredSessions.length > 1 && (
-            <Text style={styles.swipeHintText}>Geser →</Text>
-          )}
-        </View>
-
-        {filteredSessions.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <ShoppingBag size={24} color={colors.primary} />
+            <View style={styles.profileTextWrap}>
+              <Text style={styles.greetingMini}>Hallo,</Text>
+              <Text style={styles.profileName} numberOfLines={1}>
+                {/* {currentUser?.nama || 'User'}! 👋 */}
+                {currentUser?.nama?.trim().split(' ')[0] || 'User'}! 👋
+              </Text>
             </View>
-            <Text style={styles.emptyTitle}>Belum Ada Sesi Jastip Aktif</Text>
-            <Text style={styles.emptyText}>
-              Buka sirkel teman kamu atau mulai sesi belanja baru biar teman
-              bisa nitip.
-            </Text>
-          </View>
-        ) : filteredSessions.length === 1 ? (
-          renderErrandCard(filteredSessions[0], true)
-        ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            decelerationRate="fast"
-            snapToInterval={CARD_WIDTH + 14}
-            snapToAlignment="start"
-            contentContainerStyle={styles.horizontalScrollContent}
-          >
-            {filteredSessions.map(session => renderErrandCard(session, false))}
-          </ScrollView>
-        )}
+          </TouchableOpacity>
 
-        {/* My Sirkel Section */}
-        <View style={[styles.sectionHeader, styles.circlesSectionHeader]}>
-          <View style={styles.sectionHeaderLeft}>
-            <Text style={styles.sectionTitle}>Sirkel Saya</Text>
-            <View style={styles.liveCounterBadge}>
-              <Text style={styles.liveCounterText}>{circles.length}</Text>
-            </View>
-          </View>
           <TouchableOpacity
-            onPress={() => navigation.navigate('MyCircles')}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.settingsIconBtn}
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.75}
           >
-            <Text style={styles.viewAllCirclesText}>
-              Lihat Semua ({circles.length}) →
-            </Text>
+            <Settings size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        {circles.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Users size={24} color={colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>Belum Punya Sirkel</Text>
-            <Text style={styles.emptyText}>
-              Buka sirkel baru atau gabung menggunakan kode join teman kamu.
-            </Text>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => loadData(true)}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          {/* Floating Search Bar (hairline border + subtle shadow) */}
+          <View style={styles.searchBar}>
+            <Search
+              size={16}
+              color={colors.textMuted}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari sesi jastip, toko, teman..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={15} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
           </View>
-        ) : (
-          <>
-            {circles.slice(0, 3).map((circle, index) => {
-              const isOwner = circle.members?.some(
-                m => m.userId === currentUser?.id && m.role === 'OWNER',
-              );
-              const theme = CIRCLE_THEMES[index % CIRCLE_THEMES.length];
-              const hasActiveJastip = activeSessions.some(
-                s => s.circleId === circle.id && s.status === 'OPEN',
-              );
 
+          {/* Quick Command Dock (Replaces generic 50/50 buttons) */}
+          <View style={styles.quickDock}>
+            <TouchableOpacity
+              style={styles.quickDockCardPrimary}
+              onPress={() => navigation.navigate('CreateCircle')}
+              activeOpacity={0.88}
+            >
+              <View style={styles.quickIconCircleWhite}>
+                <Plus size={16} color={colors.primary} />
+              </View>
+              <View style={styles.quickDockInfo}>
+                <Text style={styles.quickDockTitleLight}>Buat Sirkel</Text>
+                <Text style={styles.quickDockSubLight}>Mulai grup belanja</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickDockCardSecondary}
+              onPress={() => navigation.navigate('JoinCircle')}
+              activeOpacity={0.88}
+            >
+              <View style={styles.quickIconCircleIndigo}>
+                <KeyRound size={16} color={colors.primary} />
+              </View>
+              <View style={styles.quickDockInfo}>
+                <Text style={styles.quickDockTitleDark}>Gabung Kode</Text>
+                <Text style={styles.quickDockSubDark}>Pake kode teman</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Dynamic Action Islands (No generic emoji banners) */}
+          {runnerPendingSession &&
+            (() => {
+              const pendingCount =
+                runnerPendingSession.payment_proofs?.filter(
+                  p => p.status === 'PENDING',
+                ).length || 1;
               return (
                 <TouchableOpacity
-                  key={circle.id}
-                  style={styles.upgradedCard}
+                  style={styles.actionIslandAmber}
                   onPress={() =>
-                    navigation.navigate('CircleDetail', {
-                      circleId: circle.id,
-                      circleName: circle.nama_sirkel,
+                    navigation.navigate('SplitBillRecap', {
+                      sessionId: runnerPendingSession.id,
+                      lokasi: runnerPendingSession.lokasi,
                     })
                   }
-                  activeOpacity={0.88}
+                  activeOpacity={0.9}
                 >
-                  <View style={styles.cardHeaderRow}>
-                    <View
-                      style={[
-                        styles.avatarBox,
-                        {
-                          backgroundColor: theme.bg,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.avatarText, { color: theme.text }]}>
-                        {circle.nama_sirkel.charAt(0).toUpperCase()}
-                      </Text>
-                      {hasActiveJastip && (
-                        <View style={styles.activeDotBadge} />
-                      )}
-                    </View>
-
-                    <View style={styles.cardMainInfo}>
-                      <View style={styles.titleCodeRow}>
-                        <Text style={styles.upgradedTitle} numberOfLines={1}>
-                          {circle.nama_sirkel}
-                        </Text>
-                        <View style={styles.codePill}>
-                          <Text style={styles.codePillHash}>#</Text>
-                          <Text style={styles.codePillText}>
-                            {circle.kode_join}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.subMetaRow}>
-                        <View
-                          style={
-                            isOwner ? styles.ownerBadge : styles.memberBadge
-                          }
-                        >
-                          <Text
-                            style={
-                              isOwner
-                                ? styles.ownerBadgeText
-                                : styles.memberBadgeText
-                            }
-                          >
-                            {isOwner ? 'Owner' : 'Anggota'}
-                          </Text>
-                        </View>
-
-                        {hasActiveJastip && (
-                          <View style={styles.jastipActivePill}>
-                            <View style={styles.jastipActiveDot} />
-                            <Text style={styles.jastipActiveText}>
-                              Jastip Buka
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
+                  <View style={styles.islandPulseAmber} />
+                  <View style={styles.islandBody}>
+                    <Text style={styles.islandTitleAmber}>
+                      {pendingCount} Bukti Bayar Menunggu Konfirmasi
+                    </Text>
+                    <Text style={styles.islandSubAmber} numberOfLines={1}>
+                      Jastip {runnerPendingSession.lokasi} • Ketuk untuk
+                      verifikasi
+                    </Text>
                   </View>
-
-                  <View style={styles.cardHairline} />
-
-                  <View style={styles.cardFooterRow}>
-                    <View style={styles.footerLeft}>
-                      <AvatarStack
-                        users={
-                          circle.members?.map(m => ({
-                            id: m.userId,
-                            name: m.user?.nama || 'Teman',
-                          })) || []
-                        }
-                        size={24}
-                        maxDisplay={3}
-                        showAddButton={false}
-                      />
-                      <Text style={styles.memberCountLabel}>
-                        {circle.members?.length || 1} Teman
-                      </Text>
-                    </View>
-
-                    <View style={styles.enterPill}>
-                      <Text style={styles.enterPillText}>Buka Sirkel</Text>
-                      <ChevronRight size={13} color={colors.primary} />
-                    </View>
+                  <View style={styles.islandBtnAmber}>
+                    <Text style={styles.islandBtnTextAmber}>Periksa</Text>
+                    <ArrowUpRight size={13} color="#92400E" />
                   </View>
                 </TouchableOpacity>
               );
-            })}
+            })()}
 
-            {circles.length > 3 && (
-              <TouchableOpacity
-                style={styles.seeMoreCirclesBtn}
-                onPress={() => navigation.navigate('MyCircles')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.seeMoreCirclesText}>
-                  + Lihat {circles.length - 3} Sirkel Lainnya
+          {penitipUnpaidSession &&
+            (() => {
+              const items =
+                penitipUnpaidSession.items?.filter(
+                  i => i.userId === currentUser?.id,
+                ) || [];
+              const myBill =
+                items.reduce((acc, i) => acc + (i.harga_final || 0), 0) +
+                (penitipUnpaidSession.tarif_jastip || 0);
+              return (
+                <TouchableOpacity
+                  style={styles.actionIslandEmerald}
+                  onPress={() =>
+                    navigation.navigate('SplitBillRecap', {
+                      sessionId: penitipUnpaidSession.id,
+                      lokasi: penitipUnpaidSession.lokasi,
+                    })
+                  }
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.islandPulseEmerald} />
+                  <View style={styles.islandBody}>
+                    <Text style={styles.islandTitleEmerald}>
+                      Tagihan Siap Dibayar: Rp {myBill.toLocaleString('id-ID')}
+                    </Text>
+                    <Text style={styles.islandSubEmerald} numberOfLines={1}>
+                      Jastip {penitipUnpaidSession.lokasi} • Upload bukti
+                      transfer
+                    </Text>
+                  </View>
+                  <View style={styles.islandBtnEmerald}>
+                    <Text style={styles.islandBtnTextEmerald}>Bayar</Text>
+                    <ArrowUpRight size={13} color="#065F46" />
+                  </View>
+                </TouchableOpacity>
+              );
+            })()}
+
+          {/* Sesi Jastip Section */}
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Text style={styles.sectionTitle}>Sesi Jastip Aktif</Text>
+              <View style={styles.liveCounterBadge}>
+                <Text style={styles.liveCounterText}>
+                  {filteredSessions.length}
                 </Text>
-                <ChevronRight size={15} color={colors.primary} />
-              </TouchableOpacity>
+              </View>
+            </View>
+            {filteredSessions.length > 1 && (
+              <Text style={styles.swipeHintText}>Geser →</Text>
             )}
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          </View>
+
+          {filteredSessions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <ShoppingBag size={24} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Belum Ada Sesi Jastip Aktif</Text>
+              <Text style={styles.emptyText}>
+                Buka sirkel teman kamu atau mulai sesi belanja baru biar teman
+                bisa nitip.
+              </Text>
+            </View>
+          ) : filteredSessions.length === 1 ? (
+            renderErrandCard(filteredSessions[0], true)
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToInterval={CARD_WIDTH + 14}
+              snapToAlignment="start"
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {filteredSessions.map(session =>
+                renderErrandCard(session, false),
+              )}
+            </ScrollView>
+          )}
+
+          {/* My Sirkel Section */}
+          <View style={[styles.sectionHeader, styles.circlesSectionHeader]}>
+            <View style={styles.sectionHeaderLeft}>
+              <Text style={styles.sectionTitle}>Sirkel Saya</Text>
+              <View style={styles.liveCounterBadge}>
+                <Text style={styles.liveCounterText}>{circles.length}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MyCircles')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.viewAllCirclesText}>
+                Lihat Semua ({circles.length}) →
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {circles.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Users size={24} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Belum Punya Sirkel</Text>
+              <Text style={styles.emptyText}>
+                Buka sirkel baru atau gabung menggunakan kode join teman kamu.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {circles.slice(0, 3).map((circle, index) => {
+                const isOwner = circle.members?.some(
+                  m => m.userId === currentUser?.id && m.role === 'OWNER',
+                );
+                const theme = CIRCLE_THEMES[index % CIRCLE_THEMES.length];
+                const hasActiveJastip = activeSessions.some(
+                  s => s.circleId === circle.id && s.status === 'OPEN',
+                );
+
+                return (
+                  <TouchableOpacity
+                    key={circle.id}
+                    style={styles.upgradedCard}
+                    onPress={() =>
+                      navigation.navigate('CircleDetail', {
+                        circleId: circle.id,
+                        circleName: circle.nama_sirkel,
+                      })
+                    }
+                    activeOpacity={0.88}
+                  >
+                    <View style={styles.cardHeaderRow}>
+                      <View
+                        style={[
+                          styles.avatarBox,
+                          {
+                            backgroundColor: theme.bg,
+                            borderColor: theme.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.avatarText, { color: theme.text }]}
+                        >
+                          {circle.nama_sirkel.charAt(0).toUpperCase()}
+                        </Text>
+                        {hasActiveJastip && (
+                          <View style={styles.activeDotBadge} />
+                        )}
+                      </View>
+
+                      <View style={styles.cardMainInfo}>
+                        <View style={styles.titleCodeRow}>
+                          <Text style={styles.upgradedTitle} numberOfLines={1}>
+                            {circle.nama_sirkel}
+                          </Text>
+                          <View style={styles.codePill}>
+                            <Text style={styles.codePillHash}>#</Text>
+                            <Text style={styles.codePillText}>
+                              {circle.kode_join}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.subMetaRow}>
+                          <View
+                            style={
+                              isOwner ? styles.ownerBadge : styles.memberBadge
+                            }
+                          >
+                            <Text
+                              style={
+                                isOwner
+                                  ? styles.ownerBadgeText
+                                  : styles.memberBadgeText
+                              }
+                            >
+                              {isOwner ? 'Owner' : 'Anggota'}
+                            </Text>
+                          </View>
+
+                          {hasActiveJastip && (
+                            <View style={styles.jastipActivePill}>
+                              <View style={styles.jastipActiveDot} />
+                              <Text style={styles.jastipActiveText}>
+                                Jastip Buka
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.cardHairline} />
+
+                    <View style={styles.cardFooterRow}>
+                      <View style={styles.footerLeft}>
+                        <AvatarStack
+                          users={
+                            circle.members?.map(m => ({
+                              id: m.userId,
+                              name: m.user?.nama || 'Teman',
+                            })) || []
+                          }
+                          size={24}
+                          maxDisplay={3}
+                          showAddButton={false}
+                        />
+                        <Text style={styles.memberCountLabel}>
+                          {circle.members?.length || 1} Teman
+                        </Text>
+                      </View>
+
+                      <View style={styles.enterPill}>
+                        <Text style={styles.enterPillText}>Buka Sirkel</Text>
+                        <ChevronRight size={13} color={colors.primary} />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
+              {circles.length > 3 && (
+                <TouchableOpacity
+                  style={styles.seeMoreCirclesBtn}
+                  onPress={() => navigation.navigate('MyCircles')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.seeMoreCirclesText}>
+                    + Lihat {circles.length - 3} Sirkel Lainnya
+                  </Text>
+                  <ChevronRight size={15} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -769,7 +778,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: 'transparent',
     },
     topBar: {
       flexDirection: 'row',
@@ -777,9 +786,7 @@ const getStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingVertical: 12,
-      backgroundColor: colors.background,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderLight,
+      backgroundColor: 'transparent',
     },
     profileSnippet: {
       flexDirection: 'row',
