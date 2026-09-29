@@ -17,7 +17,7 @@ import { useAuthStore } from '../stores';
 import { useCircle } from '../hooks';
 import { jastipApi } from '../api';
 import { JastipSession } from '../types';
-import { Header, Card, Button, AvatarStack } from '../components/common';
+import { Header, Card, AvatarStack } from '../components/common';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import { Plus, KeyRound, Search, ChevronRight, X } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
@@ -117,252 +117,265 @@ export const MyCirclesScreen: React.FC = () => {
           transparent
         />
 
-      <View style={styles.container}>
-        {/* Search Input */}
-        <View style={styles.searchBar}>
-          <Search
-            size={16}
-            color={colors.textMuted}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Cari nama sirkel atau kode join..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery('')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <X size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Filter Pills */}
-        <View style={styles.tabRow}>
-          <TouchableOpacity
-            style={[
-              styles.tabPill,
-              activeTab === 'ALL' && styles.tabPillActive,
-            ]}
-            onPress={() => setActiveTab('ALL')}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'ALL' && styles.tabTextActive,
-              ]}
-            >
-              Semua ({circles.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tabPill,
-              activeTab === 'OWNER' && styles.tabPillActive,
-            ]}
-            onPress={() => setActiveTab('OWNER')}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'OWNER' && styles.tabTextActive,
-              ]}
-            >
-              Owner ({ownerCirclesCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tabPill,
-              activeTab === 'MEMBER' && styles.tabPillActive,
-            ]}
-            onPress={() => setActiveTab('MEMBER')}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'MEMBER' && styles.tabTextActive,
-              ]}
-            >
-              Anggota ({memberCirclesCount})
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionRow}>
-          <Button
-            title="Buat Sirkel"
-            icon={<Plus size={14} color="#FFFFFF" />}
-            variant="primary"
-            size="sm"
-            onPress={() => navigation.navigate('CreateCircle')}
-            style={styles.actionBtn}
-          />
-          <Button
-            title="Gabung Kode"
-            icon={<KeyRound size={14} color={colors.primary} />}
-            variant="secondary"
-            size="sm"
-            onPress={() => navigation.navigate('JoinCircle')}
-            style={styles.actionBtn}
-          />
-        </View>
-
-        {/* List of Circles */}
-        <ScrollView
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => loadData(true)}
+        <View style={styles.container}>
+          {/* Search Input */}
+          <View style={styles.searchBar}>
+            <Search
+              size={16}
+              color={colors.textMuted}
+              style={styles.searchIcon}
             />
-          }
-        >
-          {filteredCircles.length === 0 ? (
-            <Card style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>
-                {searchQuery.trim().length > 0
-                  ? 'Sirkel Tidak Ditemukan'
-                  : activeTab === 'OWNER'
-                  ? 'Belum Ada Sirkel Buatanmu'
-                  : activeTab === 'MEMBER'
-                  ? 'Belum Ada Sirkel yang Diikuti'
-                  : 'Belum Punya Sirkel'}
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari nama sirkel atau kode join..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Filter Pills */}
+          <View style={styles.tabRow}>
+            <TouchableOpacity
+              style={[
+                styles.tabPill,
+                activeTab === 'ALL' && styles.tabPillActive,
+              ]}
+              onPress={() => setActiveTab('ALL')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'ALL' && styles.tabTextActive,
+                ]}
+              >
+                Semua ({circles.length})
               </Text>
-              <Text style={styles.emptyText}>
-                {searchQuery.trim().length > 0
-                  ? `Tidak ada sirkel yang cocok dengan kata kunci "${searchQuery}".`
-                  : 'Buat sirkel baru untuk mulai belanja bareng teman atau minta kode join.'}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tabPill,
+                activeTab === 'OWNER' && styles.tabPillActive,
+              ]}
+              onPress={() => setActiveTab('OWNER')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'OWNER' && styles.tabTextActive,
+                ]}
+              >
+                Owner ({ownerCirclesCount})
               </Text>
-            </Card>
-          ) : (
-            filteredCircles.map((circle, index) => {
-              const isOwner = circle.members?.some(
-                m => m.userId === currentUser?.id && m.role === 'OWNER',
-              );
-              const theme = CIRCLE_THEMES[index % CIRCLE_THEMES.length];
-              const hasActiveJastip = activeSessions.some(
-                s => s.circleId === circle.id && s.status === 'OPEN',
-              );
+            </TouchableOpacity>
 
-              return (
-                <TouchableOpacity
-                  key={circle.id}
-                  style={styles.upgradedCard}
-                  onPress={() =>
-                    navigation.navigate('CircleDetail', {
-                      circleId: circle.id,
-                      circleName: circle.nama_sirkel,
-                    })
-                  }
-                  activeOpacity={0.85}
-                >
-                  {/* Top Row: Avatar, Names, Badges, Code */}
-                  <View style={styles.cardHeaderRow}>
-                    <View
-                      style={[
-                        styles.avatarBox,
-                        {
-                          backgroundColor: theme.bg,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.avatarText, { color: theme.text }]}>
-                        {circle.nama_sirkel.charAt(0).toUpperCase()}
-                      </Text>
-                      {hasActiveJastip && (
-                        <View style={styles.activeDotBadge} />
-                      )}
-                    </View>
+            <TouchableOpacity
+              style={[
+                styles.tabPill,
+                activeTab === 'MEMBER' && styles.tabPillActive,
+              ]}
+              onPress={() => setActiveTab('MEMBER')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'MEMBER' && styles.tabTextActive,
+                ]}
+              >
+                Anggota ({memberCirclesCount})
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-                    <View style={styles.cardMainInfo}>
-                      <View style={styles.titleCodeRow}>
-                        <Text style={styles.upgradedTitle} numberOfLines={1}>
-                          {circle.nama_sirkel}
-                        </Text>
-                        <View style={styles.codePill}>
-                          <Text style={styles.codePillHash}>#</Text>
-                          <Text style={styles.codePillText}>
-                            {circle.kode_join}
-                          </Text>
-                        </View>
-                      </View>
+          {/* Quick Command Dock (Replaces generic 50/50 buttons) */}
+          <View style={styles.quickDock}>
+            <TouchableOpacity
+              style={styles.quickDockCardPrimary}
+              onPress={() => navigation.navigate('CreateCircle')}
+              activeOpacity={0.88}
+            >
+              <View style={styles.quickIconCircleWhite}>
+                <Plus size={16} color={colors.primary} />
+              </View>
+              <View style={styles.quickDockInfo}>
+                <Text style={styles.quickDockTitleLight}>Buat Sirkel</Text>
+                <Text style={styles.quickDockSubLight}>Mulai grup belanja</Text>
+              </View>
+            </TouchableOpacity>
 
-                      <View style={styles.subMetaRow}>
-                        <View
-                          style={
-                            isOwner ? styles.ownerBadge : styles.memberBadge
-                          }
+            <TouchableOpacity
+              style={styles.quickDockCardSecondary}
+              onPress={() => navigation.navigate('JoinCircle')}
+              activeOpacity={0.88}
+            >
+              <View style={styles.quickIconCircleIndigo}>
+                <KeyRound size={16} color={colors.primary} />
+              </View>
+              <View style={styles.quickDockInfo}>
+                <Text style={styles.quickDockTitleDark}>Gabung Kode</Text>
+                <Text style={styles.quickDockSubDark}>Pake kode teman</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* List of Circles */}
+          <ScrollView
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => loadData(true)}
+              />
+            }
+          >
+            {filteredCircles.length === 0 ? (
+              <Card style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>
+                  {searchQuery.trim().length > 0
+                    ? 'Sirkel Tidak Ditemukan'
+                    : activeTab === 'OWNER'
+                    ? 'Belum Ada Sirkel Buatanmu'
+                    : activeTab === 'MEMBER'
+                    ? 'Belum Ada Sirkel yang Diikuti'
+                    : 'Belum Punya Sirkel'}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {searchQuery.trim().length > 0
+                    ? `Tidak ada sirkel yang cocok dengan kata kunci "${searchQuery}".`
+                    : 'Buat sirkel baru untuk mulai belanja bareng teman atau minta kode join.'}
+                </Text>
+              </Card>
+            ) : (
+              filteredCircles.map((circle, index) => {
+                const isOwner = circle.members?.some(
+                  m => m.userId === currentUser?.id && m.role === 'OWNER',
+                );
+                const theme = CIRCLE_THEMES[index % CIRCLE_THEMES.length];
+                const hasActiveJastip = activeSessions.some(
+                  s => s.circleId === circle.id && s.status === 'OPEN',
+                );
+
+                return (
+                  <TouchableOpacity
+                    key={circle.id}
+                    style={styles.upgradedCard}
+                    onPress={() =>
+                      navigation.navigate('CircleDetail', {
+                        circleId: circle.id,
+                        circleName: circle.nama_sirkel,
+                      })
+                    }
+                    activeOpacity={0.85}
+                  >
+                    {/* Top Row: Avatar, Names, Badges, Code */}
+                    <View style={styles.cardHeaderRow}>
+                      <View
+                        style={[
+                          styles.avatarBox,
+                          {
+                            backgroundColor: theme.bg,
+                            borderColor: theme.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.avatarText, { color: theme.text }]}
                         >
-                          <Text
-                            style={
-                              isOwner
-                                ? styles.ownerBadgeText
-                                : styles.memberBadgeText
-                            }
-                          >
-                            {isOwner ? '👑 Owner' : '👥 Anggota'}
-                          </Text>
-                        </View>
-
+                          {circle.nama_sirkel.charAt(0).toUpperCase()}
+                        </Text>
                         {hasActiveJastip && (
-                          <View style={styles.jastipActivePill}>
-                            <View style={styles.jastipActiveDot} />
-                            <Text style={styles.jastipActiveText}>
-                              Jastip Buka
-                            </Text>
-                          </View>
+                          <View style={styles.activeDotBadge} />
                         )}
                       </View>
-                    </View>
-                  </View>
 
-                  {/* Bottom Row: Avatars & Clean Action Pill */}
-                  <View style={styles.cardFooterRow}>
-                    <View style={styles.footerLeft}>
-                      <AvatarStack
-                        users={
-                          circle.members?.map(m => ({
-                            id: m.userId,
-                            name: m.user?.nama || 'Teman',
-                          })) || []
-                        }
-                        size={26}
-                        maxDisplay={3}
-                        showAddButton={false}
-                      />
-                      <Text style={styles.memberCountLabel}>
-                        {circle.members?.length || 1} Teman
-                      </Text>
+                      <View style={styles.cardMainInfo}>
+                        <View style={styles.titleCodeRow}>
+                          <Text style={styles.upgradedTitle} numberOfLines={1}>
+                            {circle.nama_sirkel}
+                          </Text>
+                          <View style={styles.codePill}>
+                            <Text style={styles.codePillHash}>#</Text>
+                            <Text style={styles.codePillText}>
+                              {circle.kode_join}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.subMetaRow}>
+                          <View
+                            style={
+                              isOwner ? styles.ownerBadge : styles.memberBadge
+                            }
+                          >
+                            <Text
+                              style={
+                                isOwner
+                                  ? styles.ownerBadgeText
+                                  : styles.memberBadgeText
+                              }
+                            >
+                              {isOwner ? '👑 Owner' : '👥 Anggota'}
+                            </Text>
+                          </View>
+
+                          {hasActiveJastip && (
+                            <View style={styles.jastipActivePill}>
+                              <View style={styles.jastipActiveDot} />
+                              <Text style={styles.jastipActiveText}>
+                                Jastip Buka
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
                     </View>
 
-                    <View style={styles.enterPill}>
-                      <Text style={styles.enterPillText}>Buka Sirkel</Text>
-                      <ChevronRight size={14} color={colors.primary} />
+                    {/* Bottom Row: Avatars & Clean Action Pill */}
+                    <View style={styles.cardFooterRow}>
+                      <View style={styles.footerLeft}>
+                        <AvatarStack
+                          users={
+                            circle.members?.map(m => ({
+                              id: m.userId,
+                              name: m.user?.nama || 'Teman',
+                            })) || []
+                          }
+                          size={26}
+                          maxDisplay={3}
+                          showAddButton={false}
+                        />
+                        <Text style={styles.memberCountLabel}>
+                          {circle.members?.length || 1} Teman
+                        </Text>
+                      </View>
+
+                      <View style={styles.enterPill}>
+                        <Text style={styles.enterPillText}>Buka Sirkel</Text>
+                        <ChevronRight size={14} color={colors.primary} />
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
-  </LinearGradientView>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 
@@ -427,13 +440,83 @@ const getStyles = (colors: ThemeColors) =>
       color: colors.primary,
       fontWeight: '700',
     },
-    actionRow: {
+    quickDock: {
       flexDirection: 'row',
-      gap: 10,
-      marginBottom: 14,
+      gap: 12,
+      marginBottom: 20,
     },
-    actionBtn: {
+    quickDockCardPrimary: {
       flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 18,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      gap: 10,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      elevation: 3,
+    },
+    quickDockCardSecondary: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 10,
+      shadowColor: colors.shadow.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    quickIconCircleWhite: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    quickIconCircleIndigo: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    quickDockInfo: {
+      flex: 1,
+    },
+    quickDockTitleLight: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: '#FFFFFF',
+    },
+    quickDockSubLight: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 1,
+    },
+    quickDockTitleDark: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    quickDockSubDark: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.textSecondary,
+      marginTop: 1,
     },
     listContent: {
       paddingBottom: 30,
