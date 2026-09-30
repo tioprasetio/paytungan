@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import { JastipSession, OrderItem, ApiResponse } from '../types';
+import { JastipSession, OrderItem, ApiResponse, UserHistoryResponse } from '../types';
 
 export const jastipApi = {
   getCircleSessions: async (circleId: number): Promise<JastipSession[]> => {
@@ -75,9 +75,10 @@ export const jastipApi = {
   getUserHistory: async (
     userId: number,
     role: 'penitip' | 'jastiper' | 'all' = 'penitip'
-  ): Promise<any> => {
-    const res = await apiClient.get<ApiResponse<any>>(`/jastip/user/${userId}/history?role=${role}`);
+  ): Promise<UserHistoryResponse | undefined> => {
+    const res = await apiClient.get<ApiResponse<UserHistoryResponse>>(`/jastip/user/${userId}/history?role=${role}`);
     return res.data.data;
   },
 };
+
 

@@ -116,8 +116,81 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export interface PenitipHistoryItem {
+  sessionId: number;
+  lokasi: string;
+  status: SessionStatus | string;
+  waktu_tutup: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sirkel: {
+    id: number;
+    nama_sirkel: string;
+    kode_join: string;
+  };
+  jastiper: {
+    id: number;
+    nama: string;
+    no_whatsapp: string;
+    nama_bank?: string | null;
+    nomor_rekening?: string | null;
+    atas_nama?: string | null;
+  };
+  items: Array<{
+    id: number;
+    nama_barang: string;
+    catatan: string | null;
+    harga_final: number | null;
+    status_bayar: boolean;
+    createdAt?: string;
+  }>;
+  tarif_jastip: number;
+  total_harga_barang: number;
+  total_bayar: number;
+  is_all_paid: boolean;
+  payment_proof?: PaymentProof | null;
+}
+
+export interface JastiperHistoryItem {
+  sessionId: number;
+  lokasi: string;
+  status: SessionStatus | string;
+  tarif_jastip: number;
+  waktu_tutup: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sirkel: {
+    id: number;
+    nama_sirkel: string;
+    kode_join: string;
+  };
+  total_orders: number;
+  total_penitip: number;
+  total_omset: number;
+  total_pendapatan_jastip: number;
+  grand_total: number;
+  is_fully_settled: boolean;
+  penitip_list: Array<{
+    userId: number;
+    nama: string;
+    no_whatsapp: string;
+    item_count: number;
+    total_bayar: number;
+    is_paid: boolean;
+    payment_proof_status?: string | null;
+  }>;
+}
+
+export interface UserHistoryResponse {
+  role: 'penitip' | 'jastiper' | 'all';
+  penitip?: PenitipHistoryItem[];
+  jastiper?: JastiperHistoryItem[];
+}
+
 export interface AuthResult {
   user: User;
   token: string;
 }
+
+
 

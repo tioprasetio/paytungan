@@ -13,4 +13,6 @@ export type RootStackParamList = {
   PaymentSettings: undefined;
   SecuritySettings: undefined;
   MyCircles: undefined;
+  History: undefined;
 };
+

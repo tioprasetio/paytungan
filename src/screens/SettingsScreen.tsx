@@ -24,6 +24,7 @@ import {
   LogOut,
   Info,
   Moon,
+  History,
 } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
 
@@ -185,7 +186,11 @@ export const SettingsScreen: React.FC = () => {
 
             {/* Row 3: Keamanan PIN */}
             <TouchableOpacity
-              style={styles.itemRow}
+              style={[
+                styles.itemRow,
+                styles.itemRowBorder,
+                { borderBottomColor: colors.borderLight },
+              ]}
               onPress={() => navigation.navigate('SecuritySettings')}
               activeOpacity={0.65}
             >
@@ -207,7 +212,33 @@ export const SettingsScreen: React.FC = () => {
               </View>
               <ChevronRight size={18} color={colors.textMuted} />
             </TouchableOpacity>
+
+            {/* Row 4: Riwayat Transaksi */}
+            <TouchableOpacity
+              style={styles.itemRow}
+              onPress={() => navigation.navigate('History')}
+              activeOpacity={0.65}
+            >
+              <History
+                size={21}
+                color={colors.textSecondary}
+                style={styles.itemIcon}
+              />
+              <View style={styles.itemContent}>
+                <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>
+                  Riwayat Transaksi
+                </Text>
+                <Text
+                  style={[styles.itemSub, { color: colors.textSecondary }]}
+                  numberOfLines={1}
+                >
+                  Catatan titipan barang & sesi jastip kamu
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.textMuted} />
+            </TouchableOpacity>
           </View>
+
 
           {/* Section 2: Preferensi & Lainnya */}
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>

@@ -13,3 +13,5 @@ export * from './PaymentSettingsScreen';
 export * from './SecuritySettingsScreen';
 export * from './MyCirclesScreen';
 export * from './SplashScreen';
+export * from './HistoryScreen';
+

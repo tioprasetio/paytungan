@@ -35,6 +35,7 @@ import {
   Receipt,
   CheckCircle2,
   Settings,
+  History,
 } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
 
@@ -420,13 +421,23 @@ export const HomeScreen: React.FC = () => {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.settingsIconBtn}
-            onPress={() => navigation.navigate('Settings')}
-            activeOpacity={0.75}
-          >
-            <Settings size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={styles.settingsIconBtn}
+              onPress={() => navigation.navigate('History')}
+              activeOpacity={0.75}
+            >
+              <History size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.settingsIconBtn}
+              onPress={() => navigation.navigate('Settings')}
+              activeOpacity={0.75}
+            >
+              <Settings size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView

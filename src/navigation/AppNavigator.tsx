@@ -23,6 +23,7 @@ import {
   SecuritySettingsScreen,
   MyCirclesScreen,
   SplashScreen,
+  HistoryScreen,
 } from '../screens';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,6 +106,7 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen name="PaymentSettings" component={PaymentSettingsScreen} />
             <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
             <Stack.Screen name="MyCircles" component={MyCirclesScreen} />
+            <Stack.Screen name="History" component={HistoryScreen} />
           </>
         )}
       </Stack.Navigator>
