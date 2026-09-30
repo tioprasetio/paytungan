@@ -71,4 +71,13 @@ export const jastipApi = {
     if (!res.data.data) throw new Error(res.data.message || 'Gagal menyelesaikan sesi');
     return res.data.data;
   },
+
+  getUserHistory: async (
+    userId: number,
+    role: 'penitip' | 'jastiper' | 'all' = 'penitip'
+  ): Promise<any> => {
+    const res = await apiClient.get<ApiResponse<any>>(`/jastip/user/${userId}/history?role=${role}`);
+    return res.data.data;
+  },
 };
+
