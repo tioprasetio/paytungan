@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { useThemeColors, ThemeColors } from '../../theme/colors';
 
 interface SessionTimerProps {
@@ -15,7 +21,7 @@ interface SessionTimerProps {
 export const SessionTimer: React.FC<SessionTimerProps> = ({
   waktuTutup,
   initialSeconds = 300, // default 5 mins if no waktuTutup
-  label = 'menitipkan pesanan barang',
+  label = 'titip pesanan barang',
   isLocked = false,
   isBuyer = false,
   onExtendTime,
@@ -46,7 +52,7 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
       if (waktuTutup) {
         setSecondsRemaining(calculateRemaining());
       } else {
-        setSecondsRemaining((prev) => {
+        setSecondsRemaining(prev => {
           if (prev <= 1) {
             clearInterval(timer);
             return 0;
@@ -62,7 +68,9 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
   const isExpired = secondsRemaining <= 0;
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
-  const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const formattedTime = `${String(minutes).padStart(2, '0')}:${String(
+    seconds,
+  ).padStart(2, '0')}`;
 
   const handleQuickExtend = (mins: number) => {
     if (onExtendTime && !extending) {
@@ -81,14 +89,20 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
           ]}
         />
         <View style={styles.innerContent}>
-          <Text style={[styles.remainingLabel, isExpired && styles.expiredLabel]}>
+          <Text
+            style={[styles.remainingLabel, isExpired && styles.expiredLabel]}
+          >
             {isLocked ? 'Status' : isExpired ? 'Waktu Habis' : 'Sisa Waktu'}
           </Text>
           <Text style={[styles.timerDigits, isExpired && styles.expiredDigits]}>
             {isLocked ? 'Locked' : formattedTime}
           </Text>
           <Text style={styles.subLabel} numberOfLines={1}>
-            {isLocked ? 'Sesi Dikunci' : isExpired ? 'Bisa Diperpanjang' : label}
+            {isLocked
+              ? 'Sesi Dikunci'
+              : isExpired
+              ? 'Bisa Diperpanjang'
+              : label}
           </Text>
         </View>
       </View>
@@ -108,10 +122,12 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({
       {isBuyer && !isLocked ? (
         <View style={styles.extendSection}>
           <Text style={styles.extendHeading}>
-            {isExpired ? 'Pilih Tambahan Waktu:' : '+ Perpanjang Waktu Belanja:'}
+            {isExpired
+              ? 'Pilih Tambahan Waktu:'
+              : '+ Perpanjang Waktu Belanja:'}
           </Text>
           <View style={styles.extendButtonsRow}>
-            {[5, 10, 15].map((mins) => (
+            {[5, 10, 15].map(mins => (
               <TouchableOpacity
                 key={mins}
                 style={[styles.extendBtn, extending && styles.btnDisabled]}

@@ -189,7 +189,7 @@ export const HomeScreen: React.FC = () => {
     } else {
       // Penitip
       if (isOpen) {
-        actionText = isExpired ? 'Waktu Habis (Lihat)' : '+ Titip Barang';
+        actionText = isExpired ? 'Waktu Habis (Lihat)' : 'Titip Barang';
         actionBtnStyle = styles.actionBtnPrimary;
         ActionIcon = Plus;
         onActionPress = () =>

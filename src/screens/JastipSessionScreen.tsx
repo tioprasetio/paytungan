@@ -208,7 +208,7 @@ export const JastipSessionScreen: React.FC = () => {
                 {isSessionOpen ? (
                   <SessionTimer
                     waktuTutup={currentSession?.waktu_tutup}
-                    label="menitipkan pesanan barang"
+                    label="titip pesanan barang"
                     isLocked={!isSessionOpen}
                     isBuyer={isBuyer}
                     onExtendTime={handleExtendTime}
