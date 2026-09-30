@@ -7,7 +7,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   TextInput,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,21 +16,15 @@ import { RootStackParamList } from '../navigation/types';
 import { useAuthStore } from '../stores';
 import { jastipApi } from '../api';
 import { PenitipHistoryItem, JastiperHistoryItem } from '../types';
-import { Header, Card, Badge } from '../components/common';
+import { Header, Card } from '../components/common';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import {
   Search,
   ShoppingBag,
   Store,
-  Users,
-  CreditCard,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   ChevronRight,
   Receipt,
   X,
-  Sparkles,
   TrendingUp,
   Wallet,
 } from 'lucide-react-native';
@@ -50,47 +43,54 @@ export const HistoryScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabRole>('penitip');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [penitipHistory, setPenitipHistory] = useState<PenitipHistoryItem[]>([]);
-  const [jastiperHistory, setJastiperHistory] = useState<JastiperHistoryItem[]>([]);
+  const [penitipHistory, setPenitipHistory] = useState<PenitipHistoryItem[]>(
+    [],
+  );
+  const [jastiperHistory, setJastiperHistory] = useState<JastiperHistoryItem[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = useCallback(async (isPullToRefresh: boolean = false) => {
-    if (!currentUser?.id) return;
-    try {
-      if (isPullToRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+  const loadData = useCallback(
+    async (isPullToRefresh: boolean = false) => {
+      if (!currentUser?.id) return;
+      try {
+        if (isPullToRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+        const res = await jastipApi.getUserHistory(currentUser.id, 'all');
+        if (res) {
+          setPenitipHistory(res.penitip || []);
+          setJastiperHistory(res.jastiper || []);
+        }
+      } catch (err) {
+        console.warn('Gagal memuat riwayat transaksi:', err);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-      const res = await jastipApi.getUserHistory(currentUser.id, 'all');
-      if (res) {
-        setPenitipHistory(res.penitip || []);
-        setJastiperHistory(res.jastiper || []);
-      }
-    } catch (err) {
-      console.warn('Gagal memuat riwayat transaksi:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [currentUser?.id]);
+    },
+    [currentUser?.id],
+  );
 
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData])
+    }, [loadData]),
   );
 
   // Filtered lists
   const filteredPenitipList = useMemo(() => {
-    return penitipHistory.filter((item) => {
+    return penitipHistory.filter(item => {
       const q = searchQuery.toLowerCase();
       const matchSearch =
         item.lokasi?.toLowerCase().includes(q) ||
         item.sirkel?.nama_sirkel?.toLowerCase().includes(q) ||
         item.jastiper?.nama?.toLowerCase().includes(q) ||
-        item.items?.some((i) => i.nama_barang.toLowerCase().includes(q));
+        item.items?.some(i => i.nama_barang.toLowerCase().includes(q));
 
       if (!matchSearch) return false;
 
@@ -101,7 +101,7 @@ export const HistoryScreen: React.FC = () => {
   }, [penitipHistory, searchQuery, statusFilter]);
 
   const filteredJastiperList = useMemo(() => {
-    return jastiperHistory.filter((item) => {
+    return jastiperHistory.filter(item => {
       const q = searchQuery.toLowerCase();
       const matchSearch =
         item.lokasi?.toLowerCase().includes(q) ||
@@ -117,11 +117,17 @@ export const HistoryScreen: React.FC = () => {
 
   // Quick stats
   const totalPenitipSpending = useMemo(() => {
-    return penitipHistory.reduce((acc, curr) => acc + (curr.total_bayar || 0), 0);
+    return penitipHistory.reduce(
+      (acc, curr) => acc + (curr.total_bayar || 0),
+      0,
+    );
   }, [penitipHistory]);
 
   const totalJastiperRevenue = useMemo(() => {
-    return jastiperHistory.reduce((acc, curr) => acc + (curr.total_pendapatan_jastip || 0), 0);
+    return jastiperHistory.reduce(
+      (acc, curr) => acc + (curr.total_pendapatan_jastip || 0),
+      0,
+    );
   }, [jastiperHistory]);
 
   const renderPenitipCard = (item: PenitipHistoryItem) => {
@@ -156,20 +162,63 @@ export const HistoryScreen: React.FC = () => {
           </View>
 
           {item.is_all_paid ? (
-            <View style={[styles.statusPill, { backgroundColor: colors.statusOpenBg }]}>
-              <Text style={[styles.statusPillText, { color: colors.statusOpenText }]}>LUNAS</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.statusOpenBg },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: colors.statusOpenText },
+                ]}
+              >
+                LUNAS
+              </Text>
             </View>
           ) : isPendingProof ? (
-            <View style={[styles.statusPill, { backgroundColor: colors.statusLockedBg }]}>
-              <Text style={[styles.statusPillText, { color: colors.statusLockedText }]}>VERIFIKASI</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.statusLockedBg },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: colors.statusLockedText },
+                ]}
+              >
+                VERIFIKASI
+              </Text>
             </View>
           ) : isRejectedProof ? (
-            <View style={[styles.statusPill, { backgroundColor: colors.dangerLight }]}>
-              <Text style={[styles.statusPillText, { color: colors.danger }]}>DITOLAK</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.dangerLight },
+              ]}
+            >
+              <Text style={[styles.statusPillText, { color: colors.danger }]}>
+                DITOLAK
+              </Text>
             </View>
           ) : (
-            <View style={[styles.statusPill, { backgroundColor: colors.statusLockedBg }]}>
-              <Text style={[styles.statusPillText, { color: colors.statusLockedText }]}>BELUM LUNAS</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.statusLockedBg },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: colors.statusLockedText },
+                ]}
+              >
+                BELUM LUNAS
+              </Text>
             </View>
           )}
         </View>
@@ -184,7 +233,10 @@ export const HistoryScreen: React.FC = () => {
               {item.lokasi}
             </Text>
             <Text style={styles.jastiperSub} numberOfLines={1}>
-              Jastiper: <Text style={styles.jastiperName}>{item.jastiper?.nama || 'Teman'}</Text>
+              Jastiper:{' '}
+              <Text style={styles.jastiperName}>
+                {item.jastiper?.nama || 'Teman'}
+              </Text>
             </Text>
           </View>
         </View>
@@ -192,7 +244,7 @@ export const HistoryScreen: React.FC = () => {
         {/* Items List Snippet */}
         <View style={styles.itemsDivider} />
         <View style={styles.itemsWrapper}>
-          {item.items?.map((it) => (
+          {item.items?.map(it => (
             <View key={it.id} style={styles.itemRow}>
               <Text style={styles.itemName} numberOfLines={1}>
                 • {it.nama_barang}
@@ -200,7 +252,7 @@ export const HistoryScreen: React.FC = () => {
               </Text>
               <Text style={styles.itemPrice}>
                 {it.harga_final !== null
-                  ? `Rp ${(it.harga_final).toLocaleString('id-ID')}`
+                  ? `Rp ${it.harga_final.toLocaleString('id-ID')}`
                   : 'Menunggu harga'}
               </Text>
             </View>
@@ -264,16 +316,52 @@ export const HistoryScreen: React.FC = () => {
           </View>
 
           {item.is_fully_settled ? (
-            <View style={[styles.statusPill, { backgroundColor: colors.statusOpenBg }]}>
-              <Text style={[styles.statusPillText, { color: colors.statusOpenText }]}>SEMUA LUNAS</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.statusOpenBg },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: colors.statusOpenText },
+                ]}
+              >
+                SEMUA LUNAS
+              </Text>
             </View>
           ) : isDone ? (
-            <View style={[styles.statusPill, { backgroundColor: colors.statusLockedBg }]}>
-              <Text style={[styles.statusPillText, { color: colors.statusLockedText }]}>ADA HUTANG</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.statusLockedBg },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: colors.statusLockedText },
+                ]}
+              >
+                ADA HUTANG
+              </Text>
             </View>
           ) : (
-            <View style={[styles.statusPill, { backgroundColor: colors.statusCompletedBg }]}>
-              <Text style={[styles.statusPillText, { color: colors.statusCompletedText }]}>{item.status}</Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: colors.statusCompletedBg },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: colors.statusCompletedText },
+                ]}
+              >
+                {item.status}
+              </Text>
             </View>
           )}
         </View>
@@ -438,7 +526,11 @@ export const HistoryScreen: React.FC = () => {
 
           {/* Search Bar */}
           <View style={styles.searchBar}>
-            <Search size={16} color={colors.textMuted} style={styles.searchIcon} />
+            <Search
+              size={16}
+              color={colors.textMuted}
+              style={styles.searchIcon}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder={
@@ -518,11 +610,13 @@ export const HistoryScreen: React.FC = () => {
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Memuat riwayat transaksi...</Text>
+              <Text style={styles.loadingText}>
+                Memuat riwayat transaksi...
+              </Text>
             </View>
           ) : activeTab === 'penitip' ? (
             filteredPenitipList.length > 0 ? (
-              filteredPenitipList.map((item) => renderPenitipCard(item))
+              filteredPenitipList.map(item => renderPenitipCard(item))
             ) : (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIconCircle}>
@@ -538,12 +632,14 @@ export const HistoryScreen: React.FC = () => {
                   style={styles.emptyActionBtn}
                   onPress={() => navigation.navigate('Home')}
                 >
-                  <Text style={styles.emptyActionBtnText}>Lihat Sirkel Aktif</Text>
+                  <Text style={styles.emptyActionBtnText}>
+                    Lihat Sirkel Aktif
+                  </Text>
                 </TouchableOpacity>
               </View>
             )
           ) : filteredJastiperList.length > 0 ? (
-            filteredJastiperList.map((item) => renderJastiperCard(item))
+            filteredJastiperList.map(item => renderJastiperCard(item))
           ) : (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconCircle}>
