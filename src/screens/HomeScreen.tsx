@@ -402,11 +402,7 @@ export const HomeScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         {/* Opsi 2: Card Profile di Kiri & Settings Icon di Kanan */}
         <View style={styles.topBar}>
-          <TouchableOpacity
-            style={styles.profileSnippet}
-            onPress={() => navigation.navigate('Settings')}
-            activeOpacity={0.8}
-          >
+          <View style={styles.profileSnippet}>
             <View style={styles.avatarCircle}>
               <Text style={styles.avatarInitial}>
                 {currentUser?.nama?.charAt(0).toUpperCase() || 'U'}
@@ -419,7 +415,7 @@ export const HomeScreen: React.FC = () => {
                 {currentUser?.nama?.trim().split(' ')[0] || 'User'}! 👋
               </Text>
             </View>
-          </TouchableOpacity>
+          </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
@@ -590,9 +586,18 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-            {filteredSessions.length > 1 && (
+            {filteredSessions.length > 1 ? (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ActiveSessions')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.viewAllCirclesText}>
+                  Lihat Semua ({filteredSessions.length}) →
+                </Text>
+              </TouchableOpacity>
+            ) : filteredSessions.length > 1 ? (
               <Text style={styles.swipeHintText}>Geser →</Text>
-            )}
+            ) : null}
           </View>
 
           {filteredSessions.length === 0 ? (

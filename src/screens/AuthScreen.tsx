@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
@@ -233,8 +234,12 @@ export const AuthScreen: React.FC = () => {
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
           >
-            {/* Header Brand */}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+              <View>
+                {/* Header Brand */}
             <View style={styles.heroSection}>
               <View style={styles.logoBadge}>
                 <Text style={styles.logoP}>P</Text>
@@ -432,7 +437,9 @@ export const AuthScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-          </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradientView>
@@ -452,6 +459,7 @@ const getStyles = (colors: ThemeColors) =>
       flexGrow: 1,
       justifyContent: 'center',
       padding: 24,
+      paddingBottom: 36,
     },
     heroSection: {
       alignItems: 'center',

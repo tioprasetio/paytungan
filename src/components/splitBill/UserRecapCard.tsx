@@ -128,9 +128,13 @@ export const UserRecapCard: React.FC<UserRecapCardProps> = ({
         {bill.items.map(item => (
           <View key={item.id} style={styles.itemRow}>
             <View style={styles.itemTextContainer}>
-              <Text style={styles.itemName}>• {item.nama_barang}</Text>
+              <Text style={styles.itemName} numberOfLines={1}>
+                {item.nama_barang}
+              </Text>
               {item.catatan ? (
-                <Text style={styles.itemNote}>{item.catatan}</Text>
+                <Text style={styles.itemNote} numberOfLines={1}>
+                  {item.catatan}
+                </Text>
               ) : null}
             </View>
             <Text style={styles.itemPrice}>
@@ -140,12 +144,14 @@ export const UserRecapCard: React.FC<UserRecapCardProps> = ({
         ))}
 
         {/* Flat Jastip Fee */}
-        <View style={styles.itemRow}>
-          <Text style={styles.feeLabel}>• Tarif Flat Jastip</Text>
-          <Text style={styles.feePrice}>
-            Rp {bill.tarif_jastip.toLocaleString('id-ID')}
-          </Text>
-        </View>
+        {bill.tarif_jastip > 0 && (
+          <View style={[styles.itemRow, styles.feeRow]}>
+            <Text style={styles.feeLabel}>Tarif Flat Jastip</Text>
+            <Text style={styles.feePrice}>
+              Rp {bill.tarif_jastip.toLocaleString('id-ID')}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Total Footer */}
@@ -334,16 +340,21 @@ const getStyles = (colors: ThemeColors) =>
       color: '#B45309',
     },
     itemsList: {
+      gap: 6,
       marginBottom: 10,
     },
     itemRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginVertical: 3,
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
     },
     itemTextContainer: {
       flex: 1,
+      marginRight: 10,
     },
     itemName: {
       fontSize: 13,
@@ -353,23 +364,26 @@ const getStyles = (colors: ThemeColors) =>
     itemNote: {
       fontSize: 11,
       color: colors.textSecondary,
-      fontStyle: 'italic',
-      marginLeft: 10,
+      marginTop: 2,
     },
     itemPrice: {
       fontSize: 13,
       fontWeight: '600',
       color: colors.textPrimary,
     },
+    feeRow: {
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      backgroundColor: 'transparent',
+    },
     feeLabel: {
-      fontSize: 13,
-      color: colors.primary,
-      fontWeight: '600',
+      fontSize: 12,
+      color: colors.textSecondary,
     },
     feePrice: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
     },
     footer: {
       flexDirection: 'row',

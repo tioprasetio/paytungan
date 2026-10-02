@@ -170,459 +170,468 @@ export const SplitBillRecapScreen: React.FC = () => {
           onBack={() => navigation.goBack()}
           transparent
           rightAction={
-          <TouchableOpacity
-            style={styles.headerShareBtn}
-            onPress={handleShareWhatsApp}
-            activeOpacity={0.7}
-          >
-            <Share2 size={17} color={colors.textPrimary} />
-          </TouchableOpacity>
-        }
-      />
+            <TouchableOpacity
+              style={styles.headerShareBtn}
+              onPress={handleShareWhatsApp}
+              activeOpacity={0.7}
+            >
+              <Share2 size={17} color={colors.textPrimary} />
+            </TouchableOpacity>
+          }
+        />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={fetchRecap} />
-        }
-      >
-        {isLoading && !recap ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Menghitung split bill...</Text>
-          </View>
-        ) : !recap ? (
-          <View style={styles.centerContainer}>
-            <Text style={styles.errorText}>
-              Rekap split bill belum tersedia.
-            </Text>
-          </View>
-        ) : (
-          <>
-            {/* Top Quick Alert for Runner: Pending Payment Proofs to Verify */}
-            {isBuyer &&
-              (() => {
-                const pendingProofs = recap.recap_per_user.filter(
-                  u => u.payment_proof?.status === 'PENDING',
-                );
-                if (pendingProofs.length === 0) return null;
-                return (
-                  <View style={styles.pendingVerifyAlert}>
-                    <View style={styles.pendingVerifyIcon}>
-                      <Clock size={18} color="#B45309" />
-                    </View>
-                    <View style={styles.pendingVerifyTextWrap}>
-                      <Text style={styles.pendingVerifyTitle}>
-                        {pendingProofs.length} Bukti Transfer Perlu Diverifikasi
-                      </Text>
-                      <Text style={styles.pendingVerifySub} numberOfLines={1}>
-                        {pendingProofs.map(p => p.nama).join(', ')} sudah
-                        transfer
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.pendingVerifyActionBtn}
-                      onPress={() => {
-                        setSelectedUserBill(pendingProofs[0]);
-                        setProofModalMode('REVIEW');
-                        setProofModalVisible(true);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Check
-                        size={13}
-                        color="#FFFFFF"
-                        style={styles.btnIconMargin}
-                      />
-                      <Text style={styles.pendingVerifyActionText}>
-                        Periksa
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })()}
-
-            {/* Top Quick Card for Penitip: Personal Bill & 1-Tap Upload */}
-            {!isBuyer &&
-              (() => {
-                const myBill = recap.recap_per_user.find(
-                  u => u.userId === currentUser?.id,
-                );
-                if (!myBill) return null;
-                const proof = myBill.payment_proof;
-                return (
-                  <View
-                    style={[
-                      styles.myQuickBillCard,
-                      myBill.is_all_paid && styles.myQuickBillCardPaid,
-                    ]}
-                  >
-                    <View style={styles.myQuickBillHeader}>
-                      <View style={styles.myQuickBillInfo}>
-                        <Text style={styles.myQuickBillTitle}>
-                          Total Tagihan Pribadimu
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={fetchRecap} />
+          }
+        >
+          {isLoading && !recap ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Menghitung split bill...</Text>
+            </View>
+          ) : !recap ? (
+            <View style={styles.centerContainer}>
+              <Text style={styles.errorText}>
+                Rekap split bill belum tersedia.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {/* Top Quick Alert for Runner: Pending Payment Proofs to Verify */}
+              {isBuyer &&
+                (() => {
+                  const pendingProofs = recap.recap_per_user.filter(
+                    u => u.payment_proof?.status === 'PENDING',
+                  );
+                  if (pendingProofs.length === 0) return null;
+                  return (
+                    <View style={styles.pendingVerifyAlert}>
+                      <View style={styles.pendingVerifyIcon}>
+                        <Clock size={18} color="#B45309" />
+                      </View>
+                      <View style={styles.pendingVerifyTextWrap}>
+                        <Text style={styles.pendingVerifyTitle}>
+                          {pendingProofs.length} Bukti Transfer Perlu
+                          Diverifikasi
                         </Text>
-                        <Text style={styles.myQuickBillAmount}>
-                          Rp {myBill.total_bayar.toLocaleString('id-ID')}
+                        <Text style={styles.pendingVerifySub} numberOfLines={1}>
+                          {pendingProofs.map(p => p.nama).join(', ')} sudah
+                          transfer
                         </Text>
                       </View>
-                      <View
-                        style={[
-                          styles.quickStatusBadge,
-                          myBill.is_all_paid
-                            ? styles.quickStatusPaid
-                            : proof?.status === 'PENDING'
-                            ? styles.quickStatusPending
-                            : styles.quickStatusUnpaid,
-                        ]}
-                      >
-                        {myBill.is_all_paid ? (
-                          <CheckCircle2
-                            size={12}
-                            color="#166534"
-                            style={styles.statusBadgeIcon}
-                          />
-                        ) : proof?.status === 'PENDING' ? (
-                          <Clock
-                            size={12}
-                            color="#92400E"
-                            style={styles.statusBadgeIcon}
-                          />
-                        ) : (
-                          <AlertCircle
-                            size={12}
-                            color="#991B1B"
-                            style={styles.statusBadgeIcon}
-                          />
-                        )}
-                        <Text
-                          style={[
-                            styles.quickStatusText,
-                            myBill.is_all_paid
-                              ? styles.quickStatusPaidText
-                              : proof?.status === 'PENDING'
-                              ? styles.quickStatusPendingText
-                              : styles.quickStatusUnpaidText,
-                          ]}
-                        >
-                          {myBill.is_all_paid
-                            ? 'Lunas'
-                            : proof?.status === 'PENDING'
-                            ? 'Menunggu Konfirmasi'
-                            : 'Belum Bayar'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {!myBill.is_all_paid && (
                       <TouchableOpacity
-                        style={[
-                          styles.myQuickUploadBtn,
-                          proof && styles.myQuickUploadBtnSecondary,
-                        ]}
+                        style={styles.pendingVerifyActionBtn}
                         onPress={() => {
-                          setSelectedUserBill(myBill);
-                          setProofModalMode('UPLOAD');
+                          setSelectedUserBill(pendingProofs[0]);
+                          setProofModalMode('REVIEW');
                           setProofModalVisible(true);
                         }}
                         activeOpacity={0.8}
                       >
-                        {proof?.status === 'REJECTED' ? (
-                          <RefreshCw
-                            size={14}
-                            color="#FFFFFF"
-                            style={styles.btnIconMargin}
-                          />
-                        ) : proof ? (
-                          <RefreshCw
-                            size={14}
-                            color={colors.primary}
-                            style={styles.btnIconMargin}
-                          />
-                        ) : (
-                          <Camera
-                            size={14}
-                            color="#FFFFFF"
-                            style={styles.btnIconMargin}
-                          />
-                        )}
-                        <Text
-                          style={[
-                            styles.myQuickUploadBtnText,
-                            proof && styles.myQuickUploadBtnTextSecondary,
-                          ]}
-                        >
-                          {proof?.status === 'REJECTED'
-                            ? 'Unggah Ulang Bukti (Sebelumnya Ditolak)'
-                            : proof
-                            ? 'Perbarui / Cek Bukti Transfer'
-                            : 'Unggah Bukti Transfer Sekarang'}
+                        <Check
+                          size={13}
+                          color="#FFFFFF"
+                          style={styles.btnIconMargin}
+                        />
+                        <Text style={styles.pendingVerifyActionText}>
+                          Periksa
                         </Text>
                       </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              })()}
-
-            {/* Payment Destination (Runner Account Info) for Requesters */}
-            {!isBuyer ? <PaymentInfoCard buyer={recap.buyer} /> : null}
-
-            {/* Receipt and Collection Summary */}
-            <ReceiptSummary recap={recap} />
-
-            {/* Quick Command Dock (Replaces generic isolated buttons) */}
-            <View style={styles.quickDock}>
-              {/* Command 1: Share to WhatsApp */}
-              <TouchableOpacity
-                style={styles.quickDockCardPrimary}
-                onPress={handleShareWhatsApp}
-                activeOpacity={0.85}
-              >
-                <View style={styles.quickIconCircleWhite}>
-                  <Share2 size={16} color={colors.primary} />
-                </View>
-                <View style={styles.quickDockInfo}>
-                  <Text style={styles.quickDockTitleLight}>Bagikan Rekap</Text>
-                  <Text style={styles.quickDockSubLight}>
-                    Kirim ke WhatsApp sirkel
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Command 2: Role-based Action (Complete / Status / Upload) */}
-              {isBuyer ? (
-                isCompleted ? (
-                  <View style={styles.quickDockCardCompleted}>
-                    <View style={styles.quickIconCircleTint}>
-                      <CheckCircle2 size={16} color="#059669" />
                     </View>
-                    <View style={styles.quickDockInfo}>
-                      <Text style={styles.quickDockTitleCompleted}>
-                        Sesi Selesai
-                      </Text>
-                      <Text style={styles.quickDockSubDark}>
-                        Telah diarsipkan
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.quickDockCardSecondary}
-                    onPress={handleCompleteSession}
-                    activeOpacity={0.85}
-                    disabled={completing}
-                  >
-                    <View style={styles.quickIconCircleTint}>
-                      <CheckCircle2 size={16} color={colors.primary} />
-                    </View>
-                    <View style={styles.quickDockInfo}>
-                      <Text style={styles.quickDockTitleDark}>
-                        {completing ? 'Menyimpan...' : 'Selesaikan'}
-                      </Text>
-                      <Text style={styles.quickDockSubDark}>
-                        Tutup & arsipkan sesi
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )
-              ) : (
+                  );
+                })()}
+
+              {/* Top Quick Card for Penitip: Personal Bill & 1-Tap Upload */}
+              {!isBuyer &&
                 (() => {
                   const myBill = recap.recap_per_user.find(
                     u => u.userId === currentUser?.id,
                   );
                   if (!myBill) return null;
                   const proof = myBill.payment_proof;
-
-                  if (myBill.is_all_paid) {
-                    return (
-                      <View style={styles.quickDockCardCompleted}>
-                        <View style={styles.quickIconCircleTint}>
-                          <CheckCircle2 size={16} color="#059669" />
-                        </View>
-                        <View style={styles.quickDockInfo}>
-                          <Text style={styles.quickDockTitleCompleted}>
-                            Tagihan Lunas
+                  return (
+                    <View
+                      style={[
+                        styles.myQuickBillCard,
+                        myBill.is_all_paid && styles.myQuickBillCardPaid,
+                      ]}
+                    >
+                      <View style={styles.myQuickBillHeader}>
+                        <View style={styles.myQuickBillInfo}>
+                          <Text style={styles.myQuickBillTitle}>
+                            Tagihan Pribadimu
                           </Text>
-                          <Text style={styles.quickDockSubDark}>
-                            Terverifikasi
+                          <Text style={styles.myQuickBillAmount}>
+                            Rp {myBill.total_bayar.toLocaleString('id-ID')}
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.quickStatusBadge,
+                            myBill.is_all_paid
+                              ? styles.quickStatusPaid
+                              : proof?.status === 'PENDING'
+                              ? styles.quickStatusPending
+                              : styles.quickStatusUnpaid,
+                          ]}
+                        >
+                          {myBill.is_all_paid ? (
+                            <CheckCircle2
+                              size={12}
+                              color="#166534"
+                              style={styles.statusBadgeIcon}
+                            />
+                          ) : proof?.status === 'PENDING' ? (
+                            <Clock
+                              size={12}
+                              color="#92400E"
+                              style={styles.statusBadgeIcon}
+                            />
+                          ) : (
+                            <AlertCircle
+                              size={12}
+                              color="#991B1B"
+                              style={styles.statusBadgeIcon}
+                            />
+                          )}
+                          <Text
+                            style={[
+                              styles.quickStatusText,
+                              myBill.is_all_paid
+                                ? styles.quickStatusPaidText
+                                : proof?.status === 'PENDING'
+                                ? styles.quickStatusPendingText
+                                : styles.quickStatusUnpaidText,
+                            ]}
+                          >
+                            {myBill.is_all_paid
+                              ? 'Lunas'
+                              : proof?.status === 'PENDING'
+                              ? 'Menunggu Konfirmasi'
+                              : 'Belum Bayar'}
                           </Text>
                         </View>
                       </View>
-                    );
-                  }
 
-                  return (
+                      {!myBill.is_all_paid && (
+                        <TouchableOpacity
+                          style={[
+                            styles.myQuickUploadBtn,
+                            proof && styles.myQuickUploadBtnSecondary,
+                          ]}
+                          onPress={() => {
+                            setSelectedUserBill(myBill);
+                            setProofModalMode('UPLOAD');
+                            setProofModalVisible(true);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          {proof?.status === 'REJECTED' ? (
+                            <RefreshCw
+                              size={14}
+                              color="#FFFFFF"
+                              style={styles.btnIconMargin}
+                            />
+                          ) : proof ? (
+                            <RefreshCw
+                              size={14}
+                              color={colors.primary}
+                              style={styles.btnIconMargin}
+                            />
+                          ) : (
+                            <Camera
+                              size={14}
+                              color="#FFFFFF"
+                              style={styles.btnIconMargin}
+                            />
+                          )}
+                          <Text
+                            style={[
+                              styles.myQuickUploadBtnText,
+                              proof && styles.myQuickUploadBtnTextSecondary,
+                            ]}
+                          >
+                            {proof?.status === 'REJECTED'
+                              ? 'Unggah Ulang Bukti (Sebelumnya Ditolak)'
+                              : proof
+                              ? 'Perbarui / Cek Bukti Transfer'
+                              : 'Unggah Bukti Transfer Sekarang'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })()}
+
+              {/* Payment Destination (Runner Account Info) for Requesters */}
+              {!isBuyer ? <PaymentInfoCard buyer={recap.buyer} /> : null}
+
+              {/* Receipt and Collection Summary */}
+              <ReceiptSummary recap={recap} />
+
+              {/* Quick Command Dock (Replaces generic isolated buttons) */}
+              <View style={styles.quickDock}>
+                {/* Command 1: Share to WhatsApp */}
+                <TouchableOpacity
+                  style={styles.quickDockCardPrimary}
+                  onPress={handleShareWhatsApp}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.quickIconCircleWhite}>
+                    <Share2 size={16} color={colors.primary} />
+                  </View>
+                  <View style={styles.quickDockInfo}>
+                    <Text style={styles.quickDockTitleLight}>
+                      Bagikan Rekap
+                    </Text>
+                    <Text style={styles.quickDockSubLight}>
+                      Kirim ke WhatsApp sirkel
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Command 2: Role-based Action (Complete / Status / Upload) */}
+                {isBuyer ? (
+                  isCompleted ? (
+                    <View style={styles.quickDockCardCompleted}>
+                      <View style={styles.quickIconCircleTint}>
+                        <CheckCircle2 size={16} color="#059669" />
+                      </View>
+                      <View style={styles.quickDockInfo}>
+                        <Text style={styles.quickDockTitleCompleted}>
+                          Sesi Selesai
+                        </Text>
+                        <Text style={styles.quickDockSubDark}>
+                          Telah diarsipkan
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
                     <TouchableOpacity
                       style={styles.quickDockCardSecondary}
-                      onPress={() => {
-                        setSelectedUserBill(myBill);
-                        setProofModalMode('UPLOAD');
-                        setProofModalVisible(true);
-                      }}
+                      onPress={handleCompleteSession}
                       activeOpacity={0.85}
+                      disabled={completing}
                     >
                       <View style={styles.quickIconCircleTint}>
-                        <Camera size={16} color={colors.primary} />
+                        <CheckCircle2 size={16} color={colors.primary} />
                       </View>
                       <View style={styles.quickDockInfo}>
                         <Text style={styles.quickDockTitleDark}>
-                          {proof ? 'Bukti Bayar' : 'Upload Bukti'}
+                          {completing ? 'Menyimpan...' : 'Selesaikan'}
                         </Text>
-                        <Text style={styles.quickDockSubDark} numberOfLines={1}>
-                          {proof?.status === 'REJECTED'
-                            ? 'Kirim ulang bukti'
-                            : proof
-                            ? 'Cek bukti transfer'
-                            : 'Kirim bukti foto'}
+                        <Text style={styles.quickDockSubDark}>
+                          Tutup & arsipkan sesi
                         </Text>
                       </View>
                     </TouchableOpacity>
-                  );
-                })()
-              )}
-            </View>
+                  )
+                ) : (
+                  (() => {
+                    const myBill = recap.recap_per_user.find(
+                      u => u.userId === currentUser?.id,
+                    );
+                    if (!myBill) return null;
+                    const proof = myBill.payment_proof;
 
-            {/* Per-User Breakdown List */}
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <View style={styles.sectionTitleIconRow}>
-                  <Users
-                    size={16}
-                    color={colors.primary}
-                    style={styles.sectionTitleIcon}
-                  />
-                  <Text style={styles.sectionTitle}>
-                    Rincian per Teman ({recap.recap_per_user.length})
-                  </Text>
-                </View>
-                {isCompleted && (
-                  <View style={styles.completedPill}>
-                    <CheckCircle2
-                      size={11}
-                      color={colors.textSecondary}
-                      style={styles.btnIconMargin}
-                    />
-                    <Text style={styles.completedPillText}>
-                      Selesai (Arsip)
-                    </Text>
-                  </View>
+                    if (myBill.is_all_paid) {
+                      return (
+                        <View style={styles.quickDockCardCompleted}>
+                          <View style={styles.quickIconCircleTint}>
+                            <CheckCircle2 size={16} color="#059669" />
+                          </View>
+                          <View style={styles.quickDockInfo}>
+                            <Text style={styles.quickDockTitleCompleted}>
+                              Tagihan Lunas
+                            </Text>
+                            <Text style={styles.quickDockSubDark}>
+                              Terverifikasi
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    }
+
+                    return (
+                      <TouchableOpacity
+                        style={styles.quickDockCardSecondary}
+                        onPress={() => {
+                          setSelectedUserBill(myBill);
+                          setProofModalMode('UPLOAD');
+                          setProofModalVisible(true);
+                        }}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.quickIconCircleTint}>
+                          <Camera size={16} color={colors.primary} />
+                        </View>
+                        <View style={styles.quickDockInfo}>
+                          <Text style={styles.quickDockTitleDark}>
+                            {proof ? 'Bukti Bayar' : 'Upload Bukti'}
+                          </Text>
+                          <Text
+                            style={styles.quickDockSubDark}
+                            numberOfLines={1}
+                          >
+                            {proof?.status === 'REJECTED'
+                              ? 'Kirim ulang bukti'
+                              : proof
+                              ? 'Cek bukti transfer'
+                              : 'Kirim bukti foto'}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })()
                 )}
               </View>
-              {canEditPayment && (
-                <Text style={styles.buyerHint}>
-                  Verifikasi via bukti transfer atau tap "Tandai Lunas"
-                </Text>
-              )}
-            </View>
 
-            {recap.recap_per_user.map(userBill => (
-              <UserRecapCard
-                key={userBill.userId}
-                bill={userBill}
-                isBuyer={canEditPayment}
-                isCurrentUser={userBill.userId === currentUser?.id}
-                onToggleUserPaid={() =>
-                  canEditPayment &&
-                  toggleUserPaymentBatch(userBill.userId, userBill.is_all_paid)
-                }
-                onToggleItemPaid={(itemId, curr) =>
-                  canEditPayment && toggleItemPayment(itemId, curr)
-                }
-                onViewProof={bill => {
-                  setSelectedUserBill(bill);
-                  setProofModalMode('REVIEW');
-                  setProofModalVisible(true);
-                }}
-                onUploadProof={bill => {
-                  setSelectedUserBill(bill);
-                  setProofModalMode('UPLOAD');
-                  setProofModalVisible(true);
-                }}
-              />
-            ))}
-          </>
+              {/* Per-User Breakdown List */}
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <View style={styles.sectionTitleIconRow}>
+                    <Users
+                      size={16}
+                      color={colors.primary}
+                      style={styles.sectionTitleIcon}
+                    />
+                    <Text style={styles.sectionTitle}>
+                      Rincian per Teman ({recap.recap_per_user.length})
+                    </Text>
+                  </View>
+                  {isCompleted && (
+                    <View style={styles.completedPill}>
+                      <CheckCircle2
+                        size={11}
+                        color={colors.textSecondary}
+                        style={styles.btnIconMargin}
+                      />
+                      <Text style={styles.completedPillText}>
+                        Selesai (Arsip)
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                {canEditPayment && (
+                  <Text style={styles.buyerHint}>
+                    Verifikasi via bukti transfer atau tap "Tandai Lunas"
+                  </Text>
+                )}
+              </View>
+
+              {recap.recap_per_user.map(userBill => (
+                <UserRecapCard
+                  key={userBill.userId}
+                  bill={userBill}
+                  isBuyer={canEditPayment}
+                  isCurrentUser={userBill.userId === currentUser?.id}
+                  onToggleUserPaid={() =>
+                    canEditPayment &&
+                    toggleUserPaymentBatch(
+                      userBill.userId,
+                      userBill.is_all_paid,
+                    )
+                  }
+                  onToggleItemPaid={(itemId, curr) =>
+                    canEditPayment && toggleItemPayment(itemId, curr)
+                  }
+                  onViewProof={bill => {
+                    setSelectedUserBill(bill);
+                    setProofModalMode('REVIEW');
+                    setProofModalVisible(true);
+                  }}
+                  onUploadProof={bill => {
+                    setSelectedUserBill(bill);
+                    setProofModalMode('UPLOAD');
+                    setProofModalVisible(true);
+                  }}
+                />
+              ))}
+            </>
+          )}
+        </ScrollView>
+
+        {/* Payment Proof Upload & Verification Modal */}
+        {recap && (
+          <PaymentProofModal
+            visible={proofModalVisible}
+            onClose={() => setProofModalVisible(false)}
+            mode={proofModalMode}
+            sessionId={sessionId}
+            currentUserId={currentUser?.id || 0}
+            buyerName={recap.buyer.nama}
+            bankName={recap.buyer.nama_bank}
+            bankAccount={recap.buyer.nomor_rekening}
+            bankHolder={recap.buyer.atas_nama}
+            totalBill={
+              proofModalMode === 'UPLOAD'
+                ? recap.recap_per_user.find(u => u.userId === currentUser?.id)
+                    ?.total_bayar
+                : selectedUserBill?.total_bayar
+            }
+            targetUserBill={
+              selectedUserBill
+                ? recap.recap_per_user.find(
+                    u => u.userId === selectedUserBill.userId,
+                  ) || selectedUserBill
+                : undefined
+            }
+            onConfirmApprove={async targetUserId => {
+              if (!currentUser?.id) return;
+              await verifyProof({
+                verifierUserId: currentUser.id,
+                targetUserId,
+                action: 'APPROVE',
+              });
+              setSelectedUserBill(prev => {
+                if (!prev || prev.userId !== targetUserId) return prev;
+                return {
+                  ...prev,
+                  is_all_paid: true,
+                  items: prev.items.map(it => ({ ...it, status_bayar: true })),
+                  payment_proof: prev.payment_proof
+                    ? { ...prev.payment_proof, status: 'APPROVED' }
+                    : null,
+                };
+              });
+            }}
+            onConfirmReject={async (targetUserId, alasan) => {
+              if (!currentUser?.id) return;
+              await verifyProof({
+                verifierUserId: currentUser.id,
+                targetUserId,
+                action: 'REJECT',
+                alasanTolak: alasan,
+              });
+              setSelectedUserBill(prev => {
+                if (!prev || prev.userId !== targetUserId) return prev;
+                return {
+                  ...prev,
+                  payment_proof: prev.payment_proof
+                    ? {
+                        ...prev.payment_proof,
+                        status: 'REJECTED',
+                        alasan_tolak: alasan,
+                      }
+                    : null,
+                };
+              });
+            }}
+            onUploadSubmit={async (catatanText, base64Img) => {
+              if (!currentUser?.id) return;
+              await uploadProof({
+                userId: currentUser.id,
+                image_base64: base64Img,
+                catatan: catatanText,
+              });
+            }}
+          />
         )}
-      </ScrollView>
-
-      {/* Payment Proof Upload & Verification Modal */}
-      {recap && (
-        <PaymentProofModal
-          visible={proofModalVisible}
-          onClose={() => setProofModalVisible(false)}
-          mode={proofModalMode}
-          sessionId={sessionId}
-          currentUserId={currentUser?.id || 0}
-          buyerName={recap.buyer.nama}
-          bankName={recap.buyer.nama_bank}
-          bankAccount={recap.buyer.nomor_rekening}
-          bankHolder={recap.buyer.atas_nama}
-          totalBill={
-            proofModalMode === 'UPLOAD'
-              ? recap.recap_per_user.find(u => u.userId === currentUser?.id)
-                  ?.total_bayar
-              : selectedUserBill?.total_bayar
-          }
-          targetUserBill={
-            selectedUserBill
-              ? recap.recap_per_user.find(
-                  u => u.userId === selectedUserBill.userId,
-                ) || selectedUserBill
-              : undefined
-          }
-          onConfirmApprove={async targetUserId => {
-            if (!currentUser?.id) return;
-            await verifyProof({
-              verifierUserId: currentUser.id,
-              targetUserId,
-              action: 'APPROVE',
-            });
-            setSelectedUserBill(prev => {
-              if (!prev || prev.userId !== targetUserId) return prev;
-              return {
-                ...prev,
-                is_all_paid: true,
-                items: prev.items.map(it => ({ ...it, status_bayar: true })),
-                payment_proof: prev.payment_proof
-                  ? { ...prev.payment_proof, status: 'APPROVED' }
-                  : null,
-              };
-            });
-          }}
-          onConfirmReject={async (targetUserId, alasan) => {
-            if (!currentUser?.id) return;
-            await verifyProof({
-              verifierUserId: currentUser.id,
-              targetUserId,
-              action: 'REJECT',
-              alasanTolak: alasan,
-            });
-            setSelectedUserBill(prev => {
-              if (!prev || prev.userId !== targetUserId) return prev;
-              return {
-                ...prev,
-                payment_proof: prev.payment_proof
-                  ? {
-                      ...prev.payment_proof,
-                      status: 'REJECTED',
-                      alasan_tolak: alasan,
-                    }
-                  : null,
-              };
-            });
-          }}
-          onUploadSubmit={async (catatanText, base64Img) => {
-            if (!currentUser?.id) return;
-            await uploadProof({
-              userId: currentUser.id,
-              image_base64: base64Img,
-              catatan: catatanText,
-            });
-          }}
-        />
-      )}
-    </SafeAreaView>
-  </LinearGradientView>
+      </SafeAreaView>
+    </LinearGradientView>
   );
 };
 

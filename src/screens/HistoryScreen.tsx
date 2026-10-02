@@ -246,20 +246,30 @@ export const HistoryScreen: React.FC = () => {
         <View style={styles.itemsWrapper}>
           {item.items?.map(it => (
             <View key={it.id} style={styles.itemRow}>
-              <Text style={styles.itemName} numberOfLines={1}>
-                • {it.nama_barang}
-                {it.catatan ? ` (${it.catatan})` : ''}
-              </Text>
-              <Text style={styles.itemPrice}>
-                {it.harga_final !== null
-                  ? `Rp ${it.harga_final.toLocaleString('id-ID')}`
-                  : 'Menunggu harga'}
-              </Text>
+              <View style={styles.itemMain}>
+                <Text style={styles.itemName} numberOfLines={1}>
+                  {it.nama_barang}
+                </Text>
+                {it.catatan ? (
+                  <Text style={styles.itemNote} numberOfLines={1}>
+                    {it.catatan}
+                  </Text>
+                ) : null}
+              </View>
+
+              {it.harga_final !== null ? (
+                <Text style={styles.itemPrice}>
+                  Rp {it.harga_final.toLocaleString('id-ID')}
+                </Text>
+              ) : (
+                <Text style={styles.itemPending}>Menunggu harga</Text>
+              )}
             </View>
           ))}
+
           {item.tarif_jastip > 0 && (
-            <View style={styles.itemRow}>
-              <Text style={styles.itemFeeName}>• Ongkos Jastip</Text>
+            <View style={[styles.itemRow, styles.feeRow]}>
+              <Text style={styles.itemFeeName}>Ongkos Jastip</Text>
               <Text style={styles.itemFeePrice}>
                 Rp {item.tarif_jastip.toLocaleString('id-ID')}
               </Text>
@@ -669,10 +679,11 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
+      backgroundColor: 'transparent',
     },
     content: {
       paddingHorizontal: 16,
-      paddingBottom: 32,
+      paddingBottom: 40,
     },
     summaryCard: {
       flexDirection: 'row',
@@ -684,6 +695,7 @@ const getStyles = (colors: ThemeColors) =>
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 16,
+      marginTop: 16,
       ...colors.shadow,
     },
     summaryLeft: {
@@ -893,29 +905,50 @@ const getStyles = (colors: ThemeColors) =>
       marginBottom: 10,
     },
     itemsWrapper: {
-      marginBottom: 12,
       gap: 6,
+      marginBottom: 12,
     },
     itemRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    itemMain: {
+      flex: 1,
+      marginRight: 10,
     },
     itemName: {
-      fontSize: 12,
+      fontSize: 13,
+      fontWeight: '500',
       color: colors.textPrimary,
-      flex: 1,
-      marginRight: 8,
+    },
+    itemNote: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
     },
     itemPrice: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '600',
       color: colors.textPrimary,
+    },
+    itemPending: {
+      fontSize: 11,
+      fontStyle: 'italic',
+      color: colors.textSecondary,
+    },
+    feeRow: {
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      backgroundColor: 'transparent',
     },
     itemFeeName: {
       fontSize: 12,
       color: colors.textSecondary,
-      fontStyle: 'italic',
     },
     itemFeePrice: {
       fontSize: 12,

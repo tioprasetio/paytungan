@@ -31,15 +31,16 @@ export const ReceiptSummary: React.FC<ReceiptSummaryProps> = ({ recap }) => {
             {
               backgroundColor:
                 percentage === 100 ? colors.accentLight : colors.primaryLight,
-              borderColor:
-                percentage === 100 ? colors.accent : colors.primary,
+              borderColor: percentage === 100 ? colors.accent : colors.primary,
             },
           ]}
         >
           <Text
             style={[
               styles.percentageText,
-              { color: percentage === 100 ? colors.accentDark : colors.primary },
+              {
+                color: percentage === 100 ? colors.accentDark : colors.primary,
+              },
             ]}
           >
             {percentage}% Lunas
@@ -84,7 +85,10 @@ export const ReceiptSummary: React.FC<ReceiptSummaryProps> = ({ recap }) => {
           <View style={styles.splitCol}>
             <View style={styles.splitLabelRow}>
               <View
-                style={[styles.indicatorDot, { backgroundColor: colors.accent }]}
+                style={[
+                  styles.indicatorDot,
+                  { backgroundColor: colors.accent },
+                ]}
               />
               <Text style={styles.splitLabel}>Terkumpul</Text>
             </View>
@@ -109,7 +113,9 @@ export const ReceiptSummary: React.FC<ReceiptSummaryProps> = ({ recap }) => {
                   styles.indicatorDot,
                   {
                     backgroundColor:
-                      recap.total_pending > 0 ? colors.danger : colors.textMuted,
+                      recap.total_pending > 0
+                        ? colors.danger
+                        : colors.textMuted,
                   },
                 ]}
               />

@@ -14,5 +14,6 @@ export type RootStackParamList = {
   SecuritySettings: undefined;
   MyCircles: undefined;
   History: undefined;
+  ActiveSessions: undefined;
 };
 
