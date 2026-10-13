@@ -15,10 +15,16 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAuthStore } from '../stores';
-import { useCircle } from '../hooks';
+import { useCircle, useBounty, useTrustScore } from '../hooks';
 import { jastipApi } from '../api';
-import { JastipSession } from '../types';
+import { JastipSession, Bounty } from '../types';
 import { Badge, AvatarStack } from '../components/common';
+import {
+  BountyCard,
+  CreateBountyModal,
+  BountyDetailModal,
+} from '../components/bounty';
+import { TrustBadgeChip, TrustScoreModal } from '../components/trustScore';
 import { useThemeColors, ThemeColors } from '../theme/colors';
 import {
   Plus,
@@ -36,6 +42,8 @@ import {
   CheckCircle2,
   Settings,
   History,
+  Coins,
+  Sparkles,
 } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
 
@@ -58,10 +66,26 @@ export const HomeScreen: React.FC = () => {
   const colors = useThemeColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { circles, fetchUserCircles } = useCircle(currentUser?.id);
+  const {
+    bounties,
+    refresh: refreshBounties,
+    createBounty,
+    claimBounty,
+    releaseBounty,
+    completePurchase,
+    submitPayment,
+    finishBounty,
+    cancelBounty,
+  } = useBounty(undefined, currentUser?.id);
+  const { trustScore, refresh: refreshTrustScore } = useTrustScore(currentUser?.id);
 
   const [activeSessions, setActiveSessions] = useState<JastipSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [isCreateBountyVisible, setIsCreateBountyVisible] = useState(false);
+  const [selectedBounty, setSelectedBounty] = useState<Bounty | null>(null);
+  const [bountyFilter, setBountyFilter] = useState<'ALL' | 'MINE'>('ALL');
+  const [showTrustModal, setShowTrustModal] = useState(false);
 
   const loadData = useCallback(
     async (isPullToRefresh: boolean = false) => {
@@ -75,6 +99,8 @@ export const HomeScreen: React.FC = () => {
           jastipApi.getUserActiveSessions(currentUser.id).then(sessions => {
             setActiveSessions(sessions);
           }),
+          refreshBounties(),
+          refreshTrustScore(),
         ]);
       } catch (err) {
         console.warn('Failed to load active runs:', err);
@@ -82,7 +108,7 @@ export const HomeScreen: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [currentUser?.id, fetchUserCircles],
+    [currentUser?.id, fetchUserCircles, refreshBounties, refreshTrustScore],
   );
 
   useFocusEffect(
@@ -101,6 +127,15 @@ export const HomeScreen: React.FC = () => {
         s.creator?.nama?.toLowerCase().includes(query)
       );
     });
+
+  const filteredBounties = useMemo(() => {
+    return bounties.filter(b => {
+      if (bountyFilter === 'MINE') {
+        return b.creatorId === currentUser?.id || b.runnerId === currentUser?.id;
+      }
+      return true;
+    });
+  }, [bounties, bountyFilter, currentUser?.id]);
 
   const renderErrandCard = (
     session: JastipSession,
@@ -410,10 +445,18 @@ export const HomeScreen: React.FC = () => {
             </View>
             <View style={styles.profileTextWrap}>
               <Text style={styles.greetingMini}>Hallo,</Text>
-              <Text style={styles.profileName} numberOfLines={1}>
-                {/* {currentUser?.nama || 'User'}! 👋 */}
-                {currentUser?.nama?.trim().split(' ')[0] || 'User'}! 👋
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <Text style={styles.profileName} numberOfLines={1}>
+                  {currentUser?.nama?.trim().split(' ')[0] || 'User'}! 👋
+                </Text>
+                {trustScore && (
+                  <TrustBadgeChip
+                    trustScore={trustScore}
+                    onPress={() => setShowTrustModal(true)}
+                    size="sm"
+                  />
+                )}
+              </View>
             </View>
           </View>
 
@@ -628,6 +671,112 @@ export const HomeScreen: React.FC = () => {
             </ScrollView>
           )}
 
+          {/* Papan Bounty Sirkel Section (Reverse Jastip) */}
+          <View style={[styles.sectionHeader, styles.bountySectionHeader]}>
+            <View style={styles.sectionHeaderLeft}>
+              <View style={styles.bountyIconHeaderWrap}>
+                <Coins size={16} color="#D97706" />
+              </View>
+              <Text style={styles.sectionTitle}>Papan Bounty Sirkel</Text>
+              <View style={[styles.liveCounterBadge, styles.bountyCounterBadge]}>
+                <Text style={styles.bountyCounterText}>
+                  {bounties.filter(b => b.status === 'OPEN').length} Live
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {bounties.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('BountyBoard')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.viewAllCirclesText}>Semua →</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.postBountyBtn}
+                onPress={() => setIsCreateBountyVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Plus size={13} color="#4F46E5" />
+                <Text style={styles.postBountyBtnText}>Pasang</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Bounty Filter Tabs */}
+          <View style={styles.bountyFilterRow}>
+            <TouchableOpacity
+              style={[
+                styles.bountyFilterChip,
+                bountyFilter === 'ALL' && styles.bountyFilterChipActive,
+              ]}
+              onPress={() => setBountyFilter('ALL')}
+            >
+              <Text
+                style={[
+                  styles.bountyFilterText,
+                  bountyFilter === 'ALL' && styles.bountyFilterTextActive,
+                ]}
+              >
+                Semua ({bounties.length})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.bountyFilterChip,
+                bountyFilter === 'MINE' && styles.bountyFilterChipActive,
+              ]}
+              onPress={() => setBountyFilter('MINE')}
+            >
+              <Text
+                style={[
+                  styles.bountyFilterText,
+                  bountyFilter === 'MINE' && styles.bountyFilterTextActive,
+                ]}
+              >
+                Tugas Saya ({bounties.filter(b => b.creatorId === currentUser?.id || b.runnerId === currentUser?.id).length})
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bounties Content */}
+          {filteredBounties.length === 0 ? (
+            <View style={styles.emptyBountyCard}>
+              <View style={styles.emptyBountyIconWrap}>
+                <Coins size={22} color="#D97706" />
+              </View>
+              <Text style={styles.emptyBountyTitle}>Belum Ada Bounty Aktif</Text>
+              <Text style={styles.emptyBountySub}>
+                Lagi butuh sesuatu mendesak atau mager keluar? Pasang bounty sekarang & beri tip untuk temanmu!
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyBountyAction}
+                onPress={() => setIsCreateBountyVisible(true)}
+              >
+                <Plus size={14} color="#4F46E5" />
+                <Text style={styles.emptyBountyActionText}>Pasang Bounty Baru</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.bountyListWrap}>
+              {filteredBounties.map(bounty => (
+                <BountyCard
+                  key={bounty.id}
+                  bounty={bounty}
+                  currentUser={currentUser}
+                  onPress={() => setSelectedBounty(bounty)}
+                  onClaim={async b => {
+                    await claimBounty(b.id);
+                  }}
+                  onAction={b => setSelectedBounty(b)}
+                />
+              ))}
+            </View>
+          )}
+
           {/* My Sirkel Section */}
           <View style={[styles.sectionHeader, styles.circlesSectionHeader]}>
             <View style={styles.sectionHeaderLeft}>
@@ -785,6 +934,53 @@ export const HomeScreen: React.FC = () => {
             </>
           )}
         </ScrollView>
+
+        <CreateBountyModal
+          visible={isCreateBountyVisible}
+          onClose={() => setIsCreateBountyVisible(false)}
+          onSubmit={async data => {
+            if (!currentUser?.id) return;
+            await createBounty({ ...data, creatorId: currentUser.id });
+          }}
+          circles={circles}
+        />
+
+        <BountyDetailModal
+          visible={!!selectedBounty}
+          bounty={selectedBounty}
+          currentUser={currentUser}
+          onClose={() => setSelectedBounty(null)}
+          onClaim={async b => {
+            const updated = await claimBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+          onRelease={async b => {
+            const updated = await releaseBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+          onCompletePurchase={async (b, price, uri) => {
+            const updated = await completePurchase(b.id, price, uri);
+            setSelectedBounty(updated);
+          }}
+          onSubmitPayment={async (b, uri) => {
+            const updated = await submitPayment(b.id, uri);
+            setSelectedBounty(updated);
+          }}
+          onFinish={async b => {
+            const updated = await finishBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+          onCancel={async b => {
+            const updated = await cancelBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+        />
+
+        <TrustScoreModal
+          visible={showTrustModal}
+          trustScore={trustScore}
+          onClose={() => setShowTrustModal(false)}
+        />
       </SafeAreaView>
     </LinearGradientView>
   );
@@ -1539,5 +1735,118 @@ const getStyles = (colors: ThemeColors) =>
       color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 17,
+    },
+    bountySectionHeader: {
+      marginTop: 20,
+    },
+    bountyIconHeaderWrap: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: '#FEF3C7',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    bountyCounterBadge: {
+      backgroundColor: '#FEF3C7',
+    },
+    bountyCounterText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: '#D97706',
+    },
+    postBountyBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: '#EEF2FF',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: '#C7D2FE',
+    },
+    postBountyBtnText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#4F46E5',
+    },
+    bountyFilterRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 12,
+    },
+    bountyFilterChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    bountyFilterChipActive: {
+      backgroundColor: '#EEF2FF',
+      borderColor: '#4F46E5',
+    },
+    bountyFilterText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    bountyFilterTextActive: {
+      color: '#4F46E5',
+      fontWeight: '700',
+    },
+    bountyListWrap: {
+      marginBottom: 16,
+    },
+    emptyBountyCard: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 24,
+      paddingHorizontal: 20,
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 16,
+    },
+    emptyBountyIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#FEF3C7',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    emptyBountyTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    emptyBountySub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 17,
+      marginBottom: 14,
+    },
+    emptyBountyAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: '#EEF2FF',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#C7D2FE',
+    },
+    emptyBountyActionText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#4F46E5',
     },
   });

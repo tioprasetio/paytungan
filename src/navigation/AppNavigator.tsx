@@ -25,6 +25,7 @@ import {
   SplashScreen,
   HistoryScreen,
   ActiveSessionsScreen,
+  BountyBoardScreen,
 } from '../screens';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -109,6 +110,7 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen name="MyCircles" component={MyCirclesScreen} />
             <Stack.Screen name="History" component={HistoryScreen} />
             <Stack.Screen name="ActiveSessions" component={ActiveSessionsScreen} />
+            <Stack.Screen name="BountyBoard" component={BountyBoardScreen} />
           </>
         )}
       </Stack.Navigator>

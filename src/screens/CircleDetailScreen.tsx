@@ -51,8 +51,18 @@ import {
   Trash2,
   LogOut,
   Edit3,
+  Coins,
+  Sparkles,
 } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
+import {
+  BountyCard,
+  CreateBountyModal,
+  BountyDetailModal,
+} from '../components/bounty';
+import { TrustBadgeChip, TrustScoreModal } from '../components/trustScore';
+import { Bounty, UserTrustScore } from '../types';
+import { useBounty, useTrustScore } from '../hooks';
 
 type CircleDetailRouteProp = RouteProp<RootStackParamList, 'CircleDetail'>;
 type NavigationProp = NativeStackNavigationProp<
@@ -60,7 +70,7 @@ type NavigationProp = NativeStackNavigationProp<
   'CircleDetail'
 >;
 
-type MainTab = 'SESSIONS' | 'MEMBERS' | 'SETTINGS';
+type MainTab = 'SESSIONS' | 'BOUNTIES' | 'MEMBERS' | 'SETTINGS';
 type SessionFilter = 'ALL' | 'ACTIVE' | 'COMPLETED';
 
 export const CircleDetailScreen: React.FC = () => {
@@ -77,6 +87,29 @@ export const CircleDetailScreen: React.FC = () => {
   const [sessions, setSessions] = useState<JastipSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Bounty State
+  const {
+    bounties,
+    refresh: refreshBounties,
+    createBounty,
+    claimBounty,
+    releaseBounty,
+    completePurchase,
+    submitPayment,
+    finishBounty,
+    cancelBounty,
+  } = useBounty(circleId, currentUser?.id);
+  const [isCreateBountyVisible, setIsCreateBountyVisible] = useState(false);
+  const [selectedBounty, setSelectedBounty] = useState<Bounty | null>(null);
+
+  // Trust Score State
+  const { circleTrustScores, refresh: refreshTrustScores } = useTrustScore(
+    undefined,
+    circleId,
+  );
+  const [selectedTrustScore, setSelectedTrustScore] =
+    useState<UserTrustScore | null>(null);
 
   // Edit Name State
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -101,6 +134,7 @@ export const CircleDetailScreen: React.FC = () => {
         );
         setCircle(circleData);
         setSessions(circleData.sessions || []);
+        await Promise.all([refreshBounties(), refreshTrustScores()]);
       } catch (err) {
         console.warn('Error loading circle:', err);
       } finally {
@@ -109,7 +143,7 @@ export const CircleDetailScreen: React.FC = () => {
         }
       }
     },
-    [circleId, currentUser?.id],
+    [circleId, currentUser?.id, refreshBounties, refreshTrustScores],
   );
 
   useFocusEffect(
@@ -566,6 +600,31 @@ export const CircleDetailScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.segmentTab,
+                activeTab === 'BOUNTIES' && styles.segmentTabActive,
+              ]}
+              onPress={() => setActiveTab('BOUNTIES')}
+              activeOpacity={0.7}
+            >
+              <Coins
+                size={13}
+                color={
+                  activeTab === 'BOUNTIES' ? '#D97706' : colors.textMuted
+                }
+                style={styles.tabIconSpacing}
+              />
+              <Text
+                style={[
+                  styles.segmentTabText,
+                  activeTab === 'BOUNTIES' && styles.segmentTabTextActive,
+                ]}
+              >
+                Bounty ({bounties.length})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.segmentTab,
                 activeTab === 'MEMBERS' && styles.segmentTabActive,
               ]}
               onPress={() => setActiveTab('MEMBERS')}
@@ -743,6 +802,64 @@ export const CircleDetailScreen: React.FC = () => {
           </View>
         )}
 
+        {/* TAB: BOUNTIES */}
+        {activeTab === 'BOUNTIES' && (
+          <View style={styles.tabContentContainer}>
+            <View style={styles.bountyCircleHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.bountyCircleTitle}>Papan Bounty Sirkel</Text>
+                <Text style={styles.bountyCircleSubtitle}>
+                  Tugas & titipan mendesak dari teman-teman di sirkel ini
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.circlePostBountyBtn}
+                onPress={() => setIsCreateBountyVisible(true)}
+              >
+                <Plus size={14} color="#FFF" />
+                <Text style={styles.circlePostBountyBtnText}>+ Pasang</Text>
+              </TouchableOpacity>
+            </View>
+
+            {bounties.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <View style={styles.emptyIconCircle}>
+                  <Coins size={24} color="#D97706" />
+                </View>
+                <Text style={styles.emptyTitle}>Belum Ada Bounty di Sirkel Ini</Text>
+                <Text style={styles.emptyText}>
+                  Butuh bantuan belanja mendesak sekarang? Pasang bounty dan beri tip untuk teman yang bisa belikan!
+                </Text>
+                <Button
+                  title="Pasang Bounty Sekarang"
+                  size="sm"
+                  variant="primary"
+                  onPress={() => setIsCreateBountyVisible(true)}
+                  style={styles.emptyCtaBtn}
+                />
+              </View>
+            ) : (
+              <FlatList
+                data={bounties}
+                keyExtractor={item => String(item.id)}
+                contentContainerStyle={styles.listPadding}
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item: b }) => (
+                  <BountyCard
+                    bounty={b}
+                    currentUser={currentUser}
+                    onPress={() => setSelectedBounty(b)}
+                    onClaim={async item => {
+                      await claimBounty(item.id);
+                    }}
+                    onAction={item => setSelectedBounty(item)}
+                  />
+                )}
+              />
+            )}
+          </View>
+        )}
+
         {/* TAB 2: MEMBERS */}
         {activeTab === 'MEMBERS' && (
           <View style={styles.tabContentContainer}>
@@ -787,6 +904,7 @@ export const CircleDetailScreen: React.FC = () => {
               renderItem={({ item: member, index }) => {
                 const isMe = member.userId === currentUser?.id;
                 const isMemberOwner = member.role === 'OWNER';
+                const memberScore = circleTrustScores[member.userId];
 
                 return (
                   <View
@@ -818,9 +936,18 @@ export const CircleDetailScreen: React.FC = () => {
                           {member.user?.nama || 'User'}
                           {isMe ? ' (Kamu)' : ''}
                         </Text>
-                        <Text style={styles.memberPhone}>
-                          {member.user?.no_whatsapp}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+                          {memberScore && (
+                            <TrustBadgeChip
+                              trustScore={memberScore}
+                              size="sm"
+                              onPress={() => setSelectedTrustScore(memberScore)}
+                            />
+                          )}
+                          <Text style={styles.memberPhone}>
+                            {member.user?.no_whatsapp}
+                          </Text>
+                        </View>
                       </View>
                     </View>
 
@@ -1055,6 +1182,54 @@ export const CircleDetailScreen: React.FC = () => {
             </View>
           </KeyboardAvoidingView>
         </Modal>
+
+        <CreateBountyModal
+          visible={isCreateBountyVisible}
+          onClose={() => setIsCreateBountyVisible(false)}
+          onSubmit={async data => {
+            if (!currentUser?.id) return;
+            await createBounty({ ...data, creatorId: currentUser.id });
+          }}
+          circles={circle ? [circle] : []}
+          defaultCircleId={circleId}
+        />
+
+        <BountyDetailModal
+          visible={!!selectedBounty}
+          bounty={selectedBounty}
+          currentUser={currentUser}
+          onClose={() => setSelectedBounty(null)}
+          onClaim={async b => {
+            const updated = await claimBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+          onRelease={async b => {
+            const updated = await releaseBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+          onCompletePurchase={async (b, price, uri) => {
+            const updated = await completePurchase(b.id, price, uri);
+            setSelectedBounty(updated);
+          }}
+          onSubmitPayment={async (b, uri) => {
+            const updated = await submitPayment(b.id, uri);
+            setSelectedBounty(updated);
+          }}
+          onFinish={async b => {
+            const updated = await finishBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+          onCancel={async b => {
+            const updated = await cancelBounty(b.id);
+            setSelectedBounty(updated);
+          }}
+        />
+
+        <TrustScoreModal
+          visible={!!selectedTrustScore}
+          trustScore={selectedTrustScore}
+          onClose={() => setSelectedTrustScore(null)}
+        />
       </SafeAreaView>
     </LinearGradientView>
   );
@@ -1795,5 +1970,41 @@ const getStyles = (colors: ThemeColors) =>
     },
     modalSaveBtn: {
       minWidth: 100,
+    },
+    bountyCircleHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    bountyCircleTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    bountyCircleSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    circlePostBountyBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: '#4F46E5',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+    },
+    circlePostBountyBtnText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#FFFFFF',
     },
   });

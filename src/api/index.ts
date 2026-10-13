@@ -3,3 +3,5 @@ export * from './auth.api';
 export * from './circle.api';
 export * from './jastip.api';
 export * from './splitBill.api';
+export * from './bounty.api';
+export * from './trustScore.api';

@@ -15,5 +15,6 @@ export type RootStackParamList = {
   MyCircles: undefined;
   History: undefined;
   ActiveSessions: undefined;
+  BountyBoard: undefined;
 };
 

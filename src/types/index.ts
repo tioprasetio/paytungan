@@ -192,5 +192,71 @@ export interface AuthResult {
   token: string;
 }
 
+export type BountyStatus = 'OPEN' | 'TAKEN' | 'BOUGHT' | 'COMPLETED' | 'CANCELLED';
+
+export interface Bounty {
+  id: number;
+  circleId: number;
+  creatorId: number;
+  runnerId?: number | null;
+  judul: string;
+  deskripsi?: string | null;
+  imbalan_bounty: number;
+  estimasi_harga?: number | null;
+  harga_final?: number | null;
+  lokasi_tujuan?: string | null;
+  lokasi_beli?: string | null;
+  bukti_struk?: string | null;
+  bukti_bayar?: string | null;
+  status_bayar: boolean;
+  status: BountyStatus;
+  creator?: User;
+  runner?: User | null;
+  circle?: Circle;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateBountyPayload {
+  circleId: number;
+  creatorId: number;
+  judul: string;
+  deskripsi?: string;
+  imbalan_bounty: number;
+  estimasi_harga?: number;
+  lokasi_tujuan?: string;
+  lokasi_beli?: string;
+}
+
+export type BadgeLevel = 'MASTER' | 'EXCELLENT' | 'GOOD' | 'NEW' | 'WARNING';
+
+export interface TrustBadge {
+  title: string;
+  level: BadgeLevel;
+  color: string;
+  badgeCode: string;
+  description: string;
+}
+
+export interface UserTrustScore {
+  userId: number;
+  nama: string;
+  no_whatsapp: string;
+  buyerScore: number;
+  runnerScore: number;
+  overallScore: number;
+  buyerBadge: TrustBadge;
+  runnerBadge: TrustBadge;
+  isNgaret: boolean;
+  stats: {
+    totalPesanan: number;
+    pesananLunas: number;
+    pesananPending: number;
+    sesiDibuat: number;
+    sesiSelesai: number;
+    bountySelesai: number;
+  };
+}
+
 
 

@@ -15,5 +15,6 @@ export * from './MyCirclesScreen';
 export * from './SplashScreen';
 export * from './HistoryScreen';
 export * from './ActiveSessionsScreen';
+export * from './BountyBoardScreen';
 
 
