@@ -22,19 +22,14 @@ import {
   BountyDetailModal,
 } from '../components/bounty';
 import { useThemeColors, ThemeColors } from '../theme/colors';
-import {
-  ChevronLeft,
-  Coins,
-  Search,
-  Plus,
-  Sparkles,
-  TrendingUp,
-  X,
-  ShoppingBag,
-} from 'lucide-react-native';
+import { Coins, Search, Plus, Sparkles, X } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
+import { Header } from '../components/common';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'BountyBoard'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'BountyBoard'
+>;
 type FilterTab = 'ALL' | 'IN_PROGRESS' | 'MINE' | 'COMPLETED';
 
 export const BountyBoardScreen: React.FC = () => {
@@ -75,30 +70,30 @@ export const BountyBoardScreen: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [currentUser?.id, fetchUserCircles, refreshBounties]
+    [currentUser?.id, fetchUserCircles, refreshBounties],
   );
 
   useFocusEffect(
     useCallback(() => {
       loadData(false);
-    }, [loadData])
+    }, [loadData]),
   );
 
   // Statistics
   const openBounties = useMemo(
     () => bounties.filter(b => b.status === 'OPEN'),
-    [bounties]
+    [bounties],
   );
   const totalPotentialCash = useMemo(
     () => openBounties.reduce((acc, b) => acc + (b.imbalan_bounty || 0), 0),
-    [openBounties]
+    [openBounties],
   );
   const myTasksCount = useMemo(
     () =>
       bounties.filter(
-        b => b.creatorId === currentUser?.id || b.runnerId === currentUser?.id
+        b => b.creatorId === currentUser?.id || b.runnerId === currentUser?.id,
       ).length,
-    [bounties, currentUser?.id]
+    [bounties, currentUser?.id],
   );
 
   // Filtered List
@@ -106,9 +101,12 @@ export const BountyBoardScreen: React.FC = () => {
     return bounties
       .filter(b => {
         if (activeFilter === 'ALL') return b.status === 'OPEN';
-        if (activeFilter === 'IN_PROGRESS') return ['TAKEN', 'BOUGHT'].includes(b.status);
+        if (activeFilter === 'IN_PROGRESS')
+          return ['TAKEN', 'BOUGHT'].includes(b.status);
         if (activeFilter === 'MINE') {
-          return b.creatorId === currentUser?.id || b.runnerId === currentUser?.id;
+          return (
+            b.creatorId === currentUser?.id || b.runnerId === currentUser?.id
+          );
         }
         if (activeFilter === 'COMPLETED') return b.status === 'COMPLETED';
         return true;
@@ -131,29 +129,11 @@ export const BountyBoardScreen: React.FC = () => {
     <LinearGradientView colors={colors.bgGradient} style={{ flex: 1 }}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ChevronLeft size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerTitleWrap}>
-            <Text style={styles.headerTitle}>Papan Tugas Bounty</Text>
-            <Text style={styles.headerSubtitle}>
-              {openBounties.length} tugas live siap diambil
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.postBtn}
-            onPress={() => setIsCreateBountyVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Plus size={15} color="#FFF" />
-            <Text style={styles.postBtnText}>Pasang</Text>
-          </TouchableOpacity>
-        </View>
+        <Header
+          title="Papan Tugas Bounty"
+          subtitle={`${openBounties.length} tugas live siap diambil`}
+          onBack={() => navigation.goBack()}
+        />
 
         <ScrollView
           contentContainerStyle={styles.content}
@@ -170,7 +150,7 @@ export const BountyBoardScreen: React.FC = () => {
           <View style={styles.statsCard}>
             <View style={styles.statsLeft}>
               <View style={styles.statsIcon}>
-                <Coins size={22} color="#D97706" />
+                <Coins size={22} color={colors.primary} />
               </View>
               <View>
                 <Text style={styles.statsLabel}>Potensi Uang Saku Sirkel</Text>
@@ -180,7 +160,7 @@ export const BountyBoardScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.statsRightBadge}>
-              <Sparkles size={12} color="#16A34A" />
+              <Sparkles size={12} color={colors.primary} />
               <Text style={styles.statsRightBadgeText}>
                 {openBounties.length} Tersedia
               </Text>
@@ -189,7 +169,11 @@ export const BountyBoardScreen: React.FC = () => {
 
           {/* Search Bar */}
           <View style={styles.searchBar}>
-            <Search size={16} color={colors.textMuted} style={styles.searchIcon} />
+            <Search
+              size={16}
+              color={colors.textMuted}
+              style={styles.searchIcon}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder="Cari obat, makanan, titik antar..."
@@ -223,7 +207,7 @@ export const BountyBoardScreen: React.FC = () => {
                   activeFilter === 'ALL' && styles.filterChipTextActive,
                 ]}
               >
-                Tersedia ({openBounties.length})
+                Aktif ({openBounties.length})
               </Text>
             </TouchableOpacity>
 
@@ -240,7 +224,12 @@ export const BountyBoardScreen: React.FC = () => {
                   activeFilter === 'IN_PROGRESS' && styles.filterChipTextActive,
                 ]}
               >
-                Sedang Jalan ({bounties.filter(b => ['TAKEN', 'BOUGHT'].includes(b.status)).length})
+                Berlangsung (
+                {
+                  bounties.filter(b => ['TAKEN', 'BOUGHT'].includes(b.status))
+                    .length
+                }
+                )
               </Text>
             </TouchableOpacity>
 
@@ -308,7 +297,9 @@ export const BountyBoardScreen: React.FC = () => {
                 onPress={() => setIsCreateBountyVisible(true)}
               >
                 <Plus size={15} color="#4F46E5" />
-                <Text style={styles.emptyActionBtnText}>Pasang Bounty Baru</Text>
+                <Text style={styles.emptyActionBtnText}>
+                  Pasang Bounty Baru
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -328,8 +319,18 @@ export const BountyBoardScreen: React.FC = () => {
             </View>
           )}
 
-          <View style={{ height: 40 }} />
+          <View style={{ height: 80 }} />
         </ScrollView>
+
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={styles.postBtn}
+          onPress={() => setIsCreateBountyVisible(true)}
+          activeOpacity={0.88}
+        >
+          <Plus size={18} color="#FFF" />
+          <Text style={styles.postBtnText}>Pasang Bounty</Text>
+        </TouchableOpacity>
 
         {/* Modals */}
         <CreateBountyModal
@@ -383,48 +384,27 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: 'transparent',
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-    },
-    backBtn: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    headerTitleWrap: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    headerTitle: {
-      fontSize: 17,
-      fontWeight: '800',
-      color: colors.textPrimary,
-    },
-    headerSubtitle: {
-      fontSize: 11,
-      color: colors.textSecondary,
-    },
     postBtn: {
+      position: 'absolute',
+      bottom: 24,
+      right: 20,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
-      backgroundColor: '#4F46E5',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 12,
+      gap: 6,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+      borderRadius: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 6,
+      zIndex: 99,
     },
     postBtnText: {
       color: '#FFF',
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '700',
     },
     content: {
@@ -435,11 +415,11 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      backgroundColor: '#FEF3C7',
+      backgroundColor: colors.primaryDark,
       borderRadius: 18,
       padding: 16,
       borderWidth: 1,
-      borderColor: '#FDE68A',
+      borderColor: colors.primaryDark,
       marginBottom: 16,
     },
     statsLeft: {
@@ -458,28 +438,28 @@ const getStyles = (colors: ThemeColors) =>
     statsLabel: {
       fontSize: 11,
       fontWeight: '600',
-      color: '#92400E',
+      color: colors.textInverse,
     },
     statsValue: {
       fontSize: 18,
       fontWeight: '800',
-      color: '#B45309',
+      color: colors.textInverse,
     },
     statsRightBadge: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: '#DCFCE7',
+      backgroundColor: colors.textInverse,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: '#BBF7D0',
+      borderColor: colors.border,
     },
     statsRightBadgeText: {
       fontSize: 11,
       fontWeight: '700',
-      color: '#15803D',
+      color: colors.primary,
     },
     searchBar: {
       flexDirection: 'row',

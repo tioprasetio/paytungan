@@ -18,19 +18,16 @@ import { SOCKET_URL } from '../../config/api.config';
 import { useAlert } from '../../context/AlertContext';
 import {
   X,
-  Coins,
   MapPin,
   Home,
-  ShoppingBag,
-  User as UserIcon,
   MessageCircle,
-  CheckCircle2,
-  AlertCircle,
-  Receipt,
   CreditCard,
   Camera,
   Image as ImageIcon,
+  Users,
+  Eye,
 } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 
 interface BountyDetailModalProps {
@@ -40,7 +37,11 @@ interface BountyDetailModalProps {
   onClose: () => void;
   onClaim: (bounty: Bounty) => Promise<void>;
   onRelease: (bounty: Bounty) => Promise<void>;
-  onCompletePurchase: (bounty: Bounty, hargaFinal: number, receiptUri?: string) => Promise<void>;
+  onCompletePurchase: (
+    bounty: Bounty,
+    hargaFinal: number,
+    receiptUri?: string,
+  ) => Promise<void>;
   onSubmitPayment: (bounty: Bounty, proofUri?: string) => Promise<void>;
   onFinish: (bounty: Bounty) => Promise<void>;
   onCancel: (bounty: Bounty) => Promise<void>;
@@ -64,15 +65,31 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
 
   const [inputHargaFinal, setInputHargaFinal] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
-  const [selectedPaymentProof, setSelectedPaymentProof] = useState<string | null>(null);
+  const [selectedPaymentProof, setSelectedPaymentProof] = useState<
+    string | null
+  >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewModalImage, setPreviewModalImage] = useState<string | null>(null);
 
   if (!bounty) return null;
+
+  const getFullImageUrl = (path?: string | null) => {
+    if (!path) return '';
+    if (
+      path.startsWith('http') ||
+      path.startsWith('file://') ||
+      path.startsWith('content://')
+    ) {
+      return path;
+    }
+    return `${SOCKET_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
 
   const isCreator = currentUser?.id === bounty.creatorId;
   const isRunner = currentUser?.id === bounty.runnerId;
 
-  const totalBayar = (bounty.harga_final || bounty.estimasi_harga || 0) + bounty.imbalan_bounty;
+  const totalBayar =
+    (bounty.harga_final || bounty.estimasi_harga || 0) + bounty.imbalan_bounty;
 
   const handleWhatsApp = (targetUser?: User | null) => {
     if (!targetUser?.no_whatsapp) return;
@@ -159,7 +176,11 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
       await onFinish(bounty);
       onClose();
     } catch (err: any) {
-      showAlert({ title: 'Gagal Memproses', message: err.message, type: 'error' });
+      showAlert({
+        title: 'Gagal Memproses',
+        message: err.message,
+        type: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -171,35 +192,38 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
       await onCancel(bounty);
       onClose();
     } catch (err: any) {
-      showAlert({ title: 'Gagal Batalkan', message: err.message, type: 'error' });
+      showAlert({
+        title: 'Gagal Batalkan',
+        message: err.message,
+        type: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
         <View style={styles.sheetContainer}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={styles.rewardPill}>
-                <Coins size={14} color="#D97706" />
-                <Text style={styles.rewardPillText}>
-                  +Rp {bounty.imbalan_bounty.toLocaleString('id-ID')}
-                </Text>
-              </View>
-              <Text style={styles.headerStatusText}>Status: {bounty.status}</Text>
-            </View>
+            <Text style={styles.title}>{bounty.judul}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <X size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scrollArea}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Title & Desc */}
-            <Text style={styles.title}>{bounty.judul}</Text>
             {Boolean(bounty.deskripsi) && (
               <Text style={styles.description}>{bounty.deskripsi}</Text>
             )}
@@ -211,7 +235,9 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                 <View style={styles.detailRow}>
                   <MapPin size={16} color="#4F46E5" />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.detailLabel}>Toko / Lokasi Pembelian</Text>
+                    <Text style={styles.detailLabel}>
+                      Toko / Lokasi Pembelian
+                    </Text>
                     <Text style={styles.detailValue}>{bounty.lokasi_beli}</Text>
                   </View>
                 </View>
@@ -221,46 +247,143 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                   <Home size={16} color="#059669" />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.detailLabel}>Titik / Kamar Antar</Text>
-                    <Text style={styles.detailValue}>{bounty.lokasi_tujuan}</Text>
+                    <Text style={styles.detailValue}>
+                      {bounty.lokasi_tujuan}
+                    </Text>
                   </View>
                 </View>
               )}
             </View>
 
-            {/* People Info */}
-            <View style={styles.sectionCard}>
+            {/* Bento Grid: Pihak Terkait & Sirkel */}
+            <View style={styles.bentoSection}>
               <Text style={styles.sectionTitle}>Pihak Terkait</Text>
-              <View style={styles.peopleRow}>
-                <View style={styles.peopleItem}>
-                  <Text style={styles.detailLabel}>Pembuat Bounty</Text>
-                  <Text style={styles.peopleName}>{bounty.creator?.nama || '-'}</Text>
-                  {Boolean(bounty.creator?.no_whatsapp) && (
-                    <TouchableOpacity
-                      style={styles.chatPill}
-                      onPress={() => handleWhatsApp(bounty.creator)}
-                    >
-                      <MessageCircle size={12} color="#16A34A" />
-                      <Text style={styles.chatPillText}>WhatsApp</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
 
-                {bounty.runner && (
-                  <View style={styles.peopleItem}>
-                    <Text style={styles.detailLabel}>Runner (Penolong)</Text>
-                    <Text style={styles.peopleName}>{bounty.runner.nama}</Text>
-                    {Boolean(bounty.runner.no_whatsapp) && (
+              {/* Row 1: Pembuat & Runner */}
+              <View style={styles.bentoRow}>
+                {/* Pembuat Bounty */}
+                <View style={styles.bentoCard}>
+                  <View style={styles.bentoCardHeader}>
+                    <View
+                      style={[
+                        styles.bentoBadge,
+                        { backgroundColor: colors.surfaceSubtle },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.bentoBadgeText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Pembuat
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.bentoCardBody}>
+                    <Text style={styles.bentoName} numberOfLines={1}>
+                      {bounty.creator?.nama || '-'}
+                    </Text>
+                    {bounty.creator?.no_whatsapp ? (
                       <TouchableOpacity
-                        style={styles.chatPill}
-                        onPress={() => handleWhatsApp(bounty.runner)}
+                        style={styles.bentoChatPill}
+                        onPress={() => handleWhatsApp(bounty.creator)}
+                        activeOpacity={0.8}
                       >
                         <MessageCircle size={12} color="#16A34A" />
-                        <Text style={styles.chatPillText}>WhatsApp</Text>
+                        <Text style={styles.bentoChatPillText}>WhatsApp</Text>
                       </TouchableOpacity>
+                    ) : (
+                      <Text style={styles.bentoMutedText}>Tidak ada nomor</Text>
                     )}
                   </View>
-                )}
+                </View>
+
+                {/* Runner (Penolong) */}
+                <View
+                  style={[
+                    styles.bentoCard,
+                    !bounty.runner && styles.bentoCardEmpty,
+                  ]}
+                >
+                  <View style={styles.bentoCardHeader}>
+                    <View
+                      style={[
+                        styles.bentoBadge,
+                        {
+                          backgroundColor: colors.surfaceSubtle,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.bentoBadgeText,
+                          {
+                            color: colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        Runner
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.bentoCardBody}>
+                    <Text
+                      style={[
+                        styles.bentoName,
+                        !bounty.runner && {
+                          color: colors.textSecondary,
+                          fontWeight: '600',
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {bounty.runner?.nama || 'Belum Ada'}
+                    </Text>
+                    {bounty.runner?.no_whatsapp ? (
+                      <TouchableOpacity
+                        style={styles.bentoChatPill}
+                        onPress={() => handleWhatsApp(bounty.runner)}
+                        activeOpacity={0.8}
+                      >
+                        <MessageCircle size={12} color={colors.success} />
+                        <Text style={styles.bentoChatPillText}>WhatsApp</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={styles.bentoMutedText}>
+                        {bounty.runner
+                          ? 'Tidak ada nomor'
+                          : 'Menunggu penolong'}
+                      </Text>
+                    )}
+                  </View>
+                </View>
               </View>
+
+              {/* Row 2: Sirkel Asal */}
+              {Boolean(bounty.circle?.nama_sirkel) && (
+                <View style={styles.bentoCircleCard}>
+                  <View style={styles.bentoCircleLeft}>
+                    <View
+                      style={[
+                        styles.bentoIconWrap,
+                        { backgroundColor: colors.primaryLight },
+                      ]}
+                    >
+                      <Users size={16} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.bentoCircleLabel}>SIRKEL ASAL</Text>
+                      <Text style={styles.bentoCircleName} numberOfLines={1}>
+                        {bounty.circle?.nama_sirkel}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.bentoCircleBadge}>
+                    <Text style={styles.bentoCircleBadgeText}>Komunitas</Text>
+                  </View>
+                </View>
+              )}
             </View>
 
             {/* Financial Breakdown */}
@@ -268,35 +391,62 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
               <Text style={styles.sectionTitle}>Rincian Biaya</Text>
               <View style={styles.costRow}>
                 <Text style={styles.costLabel}>Imbalan Jasa / Bounty</Text>
-                <Text style={styles.costVal}>Rp {bounty.imbalan_bounty.toLocaleString('id-ID')}</Text>
+                <Text style={styles.costVal}>
+                  Rp {bounty.imbalan_bounty.toLocaleString('id-ID')}
+                </Text>
               </View>
-              {Boolean(bounty.harga_final) ? (
+              {bounty.harga_final ? (
                 <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Harga Belanjaan Asli (Struk)</Text>
-                  <Text style={styles.costVal}>Rp {bounty.harga_final?.toLocaleString('id-ID')}</Text>
+                  <Text style={styles.costLabel}>
+                    Harga Belanjaan Asli (Struk)
+                  </Text>
+                  <Text style={styles.costVal}>
+                    Rp {bounty.harga_final?.toLocaleString('id-ID')}
+                  </Text>
                 </View>
-              ) : Boolean(bounty.estimasi_harga) ? (
+              ) : bounty.estimasi_harga ? (
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Estimasi Harga Belanjaan</Text>
-                  <Text style={styles.costVal}>Rp {bounty.estimasi_harga?.toLocaleString('id-ID')}</Text>
+                  <Text style={styles.costVal}>
+                    Rp {bounty.estimasi_harga?.toLocaleString('id-ID')}
+                  </Text>
                 </View>
               ) : null}
 
               <View style={[styles.costRow, styles.costTotalRow]}>
-                <Text style={styles.costTotalLabel}>Total Yang Harus Dibayar</Text>
-                <Text style={styles.costTotalVal}>Rp {totalBayar.toLocaleString('id-ID')}</Text>
+                <Text style={styles.costTotalLabel}>
+                  Total Yang Harus Dibayar
+                </Text>
+                <Text style={styles.costTotalVal}>
+                  Rp {totalBayar.toLocaleString('id-ID')}
+                </Text>
               </View>
             </View>
 
             {/* Struk Image if already uploaded */}
             {Boolean(bounty.bukti_struk) && (
               <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>Foto Struk Pembelian</Text>
-                <Image
-                  source={{ uri: `${SOCKET_URL}${bounty.bukti_struk}` }}
-                  style={styles.proofImage}
-                  resizeMode="cover"
-                />
+                <View style={styles.strukHeaderRow}>
+                  <Text style={styles.sectionTitle}>Foto Struk Pembelian</Text>
+                  <Text style={styles.tapToZoomText}>Ketuk untuk perbesar</Text>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    setPreviewModalImage(getFullImageUrl(bounty.bukti_struk))
+                  }
+                  style={styles.proofImageWrap}
+                >
+                  <Image
+                    source={{ uri: getFullImageUrl(bounty.bukti_struk) }}
+                    style={styles.proofImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.zoomOverlayBadge}>
+                    <Eye size={12} color="#FFF" />
+                    <Text style={styles.zoomOverlayText}>Lihat Jelas</Text>
+                  </View>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -334,7 +484,30 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                 </View>
 
                 {selectedReceipt && (
-                  <Image source={{ uri: selectedReceipt }} style={styles.previewImage} />
+                  <View style={styles.selectedReceiptWrap}>
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => setPreviewModalImage(selectedReceipt)}
+                      style={styles.selectedReceiptTouchable}
+                    >
+                      <Image
+                        source={{ uri: selectedReceipt }}
+                        style={styles.previewImage}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.zoomOverlayBadge}>
+                        <Eye size={12} color="#FFF" />
+                        <Text style={styles.zoomOverlayText}>Lihat Preview</Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.removeReceiptBtn}
+                      onPress={() => setSelectedReceipt(null)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <X size={14} color="#FFF" />
+                    </TouchableOpacity>
+                  </View>
                 )}
 
                 <TouchableOpacity
@@ -345,7 +518,9 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                   {isSubmitting ? (
                     <ActivityIndicator color="#FFF" size="small" />
                   ) : (
-                    <Text style={styles.submitActionBtnText}>Simpan & Tagihkan</Text>
+                    <Text style={styles.submitActionBtnText}>
+                      Simpan & Tagihkan
+                    </Text>
                   )}
                 </TouchableOpacity>
 
@@ -354,7 +529,9 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                   onPress={handleRelease}
                   disabled={isSubmitting}
                 >
-                  <Text style={styles.releaseBtnText}>Batalkan Pengambilan Tugas</Text>
+                  <Text style={styles.releaseBtnText}>
+                    Batalkan Pengambilan Tugas
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -362,18 +539,27 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
             {/* Creator Action: Pay and Finish */}
             {bounty.status === 'BOUGHT' && isCreator && (
               <View style={[styles.sectionCard, styles.actionCard]}>
-                <Text style={styles.sectionTitle}>Konfirmasi Penerimaan & Bayar</Text>
+                <Text style={styles.sectionTitle}>
+                  Konfirmasi Penerimaan & Bayar
+                </Text>
                 <Text style={styles.sectionSubtitle}>
-                  Barang sudah dibeli oleh runner. Harap bayar total Rp {totalBayar.toLocaleString('id-ID')}.
+                  Barang sudah dibeli oleh runner. Harap bayar total Rp{' '}
+                  {totalBayar.toLocaleString('id-ID')}.
                 </Text>
 
                 {bounty.runner?.nomor_rekening && (
                   <View style={styles.bankInfoBox}>
                     <CreditCard size={18} color="#4F46E5" />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.bankName}>{bounty.runner.nama_bank || 'Bank / E-Wallet'}</Text>
-                      <Text style={styles.bankNumber}>{bounty.runner.nomor_rekening}</Text>
-                      <Text style={styles.bankOwner}>a/n {bounty.runner.atas_nama || bounty.runner.nama}</Text>
+                      <Text style={styles.bankName}>
+                        {bounty.runner.nama_bank || 'Bank / E-Wallet'}
+                      </Text>
+                      <Text style={styles.bankNumber}>
+                        {bounty.runner.nomor_rekening}
+                      </Text>
+                      <Text style={styles.bankOwner}>
+                        a/n {bounty.runner.atas_nama || bounty.runner.nama}
+                      </Text>
                     </View>
                   </View>
                 )}
@@ -383,24 +569,32 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                     style={styles.photoBtn}
                     onPress={() => handlePickPaymentProof('library')}
                   >
-                    <ImageIcon size={16} color="#4F46E5" />
+                    <ImageIcon size={16} color={colors.primary} />
                     <Text style={styles.photoBtnText}>Unggah Bukti Bayar</Text>
                   </TouchableOpacity>
                 </View>
 
                 {selectedPaymentProof && (
-                  <Image source={{ uri: selectedPaymentProof }} style={styles.previewImage} />
+                  <Image
+                    source={{ uri: selectedPaymentProof }}
+                    style={styles.previewImage}
+                  />
                 )}
 
                 <TouchableOpacity
-                  style={[styles.submitActionBtn, { backgroundColor: '#10B981' }]}
+                  style={[
+                    styles.submitActionBtn,
+                    { backgroundColor: '#10B981' },
+                  ]}
                   onPress={handlePaymentSubmit}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <ActivityIndicator color="#FFF" size="small" />
                   ) : (
-                    <Text style={styles.submitActionBtnText}>Selesaikan & Konfirmasi Bayar</Text>
+                    <Text style={styles.submitActionBtnText}>
+                      Selesaikan & Konfirmasi Bayar
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -422,7 +616,8 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
                     <ActivityIndicator color="#FFF" size="small" />
                   ) : (
                     <Text style={styles.primaryBtnText}>
-                      Ambil Bounty Ini (Dapat Rp {bounty.imbalan_bounty.toLocaleString('id-ID')})
+                      Ambil Bounty Ini (Dapat Rp{' '}
+                      {bounty.imbalan_bounty.toLocaleString('id-ID')})
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -438,6 +633,35 @@ export const BountyDetailModal: React.FC<BountyDetailModalProps> = ({
             </View>
           )}
         </View>
+
+        {/* Fullscreen Struk Preview Overlay */}
+        {Boolean(previewModalImage) && (
+          <View style={styles.fullscreenBackdrop}>
+            <SafeAreaView
+              style={styles.fullscreenSafeArea}
+              edges={['top', 'bottom']}
+            >
+              <View style={styles.fullscreenHeader}>
+                <Text style={styles.fullscreenTitle}>Foto Struk Pembelian</Text>
+                <TouchableOpacity
+                  style={styles.fullscreenCloseBtn}
+                  onPress={() => setPreviewModalImage(null)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <X size={20} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.fullscreenImageWrap}>
+                <Image
+                  source={{ uri: previewModalImage || '' }}
+                  style={styles.fullscreenImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </SafeAreaView>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -463,35 +687,6 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingBottom: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    rewardPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: '#FEF3C7',
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: '#FDE68A',
-    },
-    rewardPillText: {
-      fontSize: 13,
-      fontWeight: '800',
-      color: '#B45309',
-    },
-    headerStatusText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.textSecondary,
     },
     closeBtn: {
       padding: 6,
@@ -548,34 +743,121 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '600',
       color: colors.textPrimary,
     },
-    peopleRow: {
+    // Bento Styles
+    bentoSection: {
+      marginBottom: 12,
+    },
+    bentoRow: {
       flexDirection: 'row',
-      gap: 16,
+      gap: 10,
+      marginBottom: 10,
     },
-    peopleItem: {
+    bentoCard: {
       flex: 1,
+      backgroundColor: colors.background,
+      borderRadius: 14,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minHeight: 112,
+      justifyContent: 'space-between',
     },
-    peopleName: {
+    bentoCardEmpty: {
+      borderStyle: 'dashed',
+      borderColor: colors.border,
+      opacity: 0.9,
+    },
+    bentoCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    bentoCardBody: {
+      justifyContent: 'flex-end',
+    },
+    bentoIconWrap: {
+      width: 28,
+      height: 28,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bentoBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    bentoBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+    },
+    bentoName: {
       fontSize: 14,
       fontWeight: '700',
       color: colors.textPrimary,
-      marginTop: 2,
-      marginBottom: 6,
+      marginBottom: 8,
     },
-    chatPill: {
+    bentoChatPill: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: 5,
-      backgroundColor: '#DCFCE7',
+      backgroundColor: colors.successLight,
+      paddingHorizontal: 9,
+      paddingVertical: 6,
+      borderRadius: 8,
+      alignSelf: 'stretch',
+    },
+    bentoChatPillText: {
+      fontSize: 11,
+      color: colors.success,
+      fontWeight: '700',
+    },
+    bentoMutedText: {
+      fontSize: 11,
+      color: colors.textMuted,
+      fontWeight: '500',
+    },
+    bentoCircleCard: {
+      backgroundColor: colors.background,
+      borderRadius: 14,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    bentoCircleLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
+    },
+    bentoCircleLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+    },
+    bentoCircleName: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginTop: 2,
+    },
+    bentoCircleBadge: {
+      backgroundColor: colors.primaryLight,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 8,
-      alignSelf: 'flex-start',
     },
-    chatPillText: {
-      fontSize: 11,
-      color: '#16A34A',
+    bentoCircleBadgeText: {
+      fontSize: 10,
       fontWeight: '700',
+      color: colors.primary,
     },
     costRow: {
       flexDirection: 'row',
@@ -648,13 +930,109 @@ const getStyles = (colors: ThemeColors) =>
     photoBtnText: {
       fontSize: 12,
       fontWeight: '600',
-      color: '#4F46E5',
+      color: colors.primary,
     },
     previewImage: {
       width: '100%',
       height: 140,
       borderRadius: 8,
+    },
+    strukHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 10,
+    },
+    tapToZoomText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    proofImageWrap: {
+      position: 'relative',
+      borderRadius: 10,
+      overflow: 'hidden',
+    },
+    zoomOverlayBadge: {
+      position: 'absolute',
+      bottom: 8,
+      right: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    zoomOverlayText: {
+      color: '#FFF',
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    selectedReceiptWrap: {
+      position: 'relative',
+      marginBottom: 10,
+    },
+    selectedReceiptTouchable: {
+      borderRadius: 8,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    removeReceiptBtn: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+    },
+    fullscreenBackdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.95)',
+      zIndex: 999,
+    },
+    fullscreenSafeArea: {
+      flex: 1,
+    },
+    fullscreenHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+    },
+    fullscreenTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFF',
+    },
+    fullscreenCloseBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    fullscreenImageWrap: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingBottom: 20,
+    },
+    fullscreenImage: {
+      width: '100%',
+      height: '100%',
     },
     submitActionBtn: {
       backgroundColor: '#4F46E5',

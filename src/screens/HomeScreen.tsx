@@ -43,7 +43,6 @@ import {
   Settings,
   History,
   Coins,
-  Sparkles,
 } from 'lucide-react-native';
 import { LinearGradientView } from '../components/common/LinearGradientView';
 
@@ -77,14 +76,16 @@ export const HomeScreen: React.FC = () => {
     finishBounty,
     cancelBounty,
   } = useBounty(undefined, currentUser?.id);
-  const { trustScore, refresh: refreshTrustScore } = useTrustScore(currentUser?.id);
+  const { trustScore, refresh: refreshTrustScore } = useTrustScore(
+    currentUser?.id,
+  );
 
   const [activeSessions, setActiveSessions] = useState<JastipSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateBountyVisible, setIsCreateBountyVisible] = useState(false);
   const [selectedBounty, setSelectedBounty] = useState<Bounty | null>(null);
-  const [bountyFilter, setBountyFilter] = useState<'ALL' | 'MINE'>('ALL');
+  const [bountyFilter, setBountyFilter] = useState<'OPEN' | 'MINE'>('OPEN');
   const [showTrustModal, setShowTrustModal] = useState(false);
 
   const loadData = useCallback(
@@ -131,7 +132,12 @@ export const HomeScreen: React.FC = () => {
   const filteredBounties = useMemo(() => {
     return bounties.filter(b => {
       if (bountyFilter === 'MINE') {
-        return b.creatorId === currentUser?.id || b.runnerId === currentUser?.id;
+        return (
+          b.creatorId === currentUser?.id || b.runnerId === currentUser?.id
+        );
+      }
+      if (bountyFilter === 'OPEN') {
+        return b.status === 'OPEN';
       }
       return true;
     });
@@ -444,19 +450,18 @@ export const HomeScreen: React.FC = () => {
               </Text>
             </View>
             <View style={styles.profileTextWrap}>
-              <Text style={styles.greetingMini}>Hallo,</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <Text style={styles.profileName} numberOfLines={1}>
-                  {currentUser?.nama?.trim().split(' ')[0] || 'User'}! 👋
-                </Text>
-                {trustScore && (
+              <Text style={styles.profileName} numberOfLines={1}>
+                Hallo, {currentUser?.nama?.trim().split(' ')[0] || 'User'}! 👋
+              </Text>
+              {trustScore && (
+                <View style={{ marginTop: 4 }}>
                   <TrustBadgeChip
                     trustScore={trustScore}
                     onPress={() => setShowTrustModal(true)}
                     size="sm"
                   />
-                )}
-              </View>
+                </View>
+              )}
             </View>
           </View>
 
@@ -638,8 +643,6 @@ export const HomeScreen: React.FC = () => {
                   Lihat Semua ({filteredSessions.length}) →
                 </Text>
               </TouchableOpacity>
-            ) : filteredSessions.length > 1 ? (
-              <Text style={styles.swipeHintText}>Geser →</Text>
             ) : null}
           </View>
 
@@ -674,34 +677,21 @@ export const HomeScreen: React.FC = () => {
           {/* Papan Bounty Sirkel Section (Reverse Jastip) */}
           <View style={[styles.sectionHeader, styles.bountySectionHeader]}>
             <View style={styles.sectionHeaderLeft}>
-              <View style={styles.bountyIconHeaderWrap}>
-                <Coins size={16} color="#D97706" />
-              </View>
               <Text style={styles.sectionTitle}>Papan Bounty Sirkel</Text>
-              <View style={[styles.liveCounterBadge, styles.bountyCounterBadge]}>
-                <Text style={styles.bountyCounterText}>
-                  {bounties.filter(b => b.status === 'OPEN').length} Live
-                </Text>
-              </View>
             </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {bounties.length > 0 && (
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            >
+              {bounties.length > 1 && (
                 <TouchableOpacity
                   onPress={() => navigation.navigate('BountyBoard')}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={styles.viewAllCirclesText}>Semua →</Text>
+                  <Text style={styles.viewAllCirclesText}>
+                    Lihat Semua ({bounties.length}) →
+                  </Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity
-                style={styles.postBountyBtn}
-                onPress={() => setIsCreateBountyVisible(true)}
-                activeOpacity={0.8}
-              >
-                <Plus size={13} color="#4F46E5" />
-                <Text style={styles.postBountyBtnText}>Pasang</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -710,17 +700,17 @@ export const HomeScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.bountyFilterChip,
-                bountyFilter === 'ALL' && styles.bountyFilterChipActive,
+                bountyFilter === 'OPEN' && styles.bountyFilterChipActive,
               ]}
-              onPress={() => setBountyFilter('ALL')}
+              onPress={() => setBountyFilter('OPEN')}
             >
               <Text
                 style={[
                   styles.bountyFilterText,
-                  bountyFilter === 'ALL' && styles.bountyFilterTextActive,
+                  bountyFilter === 'OPEN' && styles.bountyFilterTextActive,
                 ]}
               >
-                Semua ({bounties.length})
+                Aktif ({bounties.filter(b => b.status === 'OPEN').length})
               </Text>
             </TouchableOpacity>
 
@@ -737,7 +727,15 @@ export const HomeScreen: React.FC = () => {
                   bountyFilter === 'MINE' && styles.bountyFilterTextActive,
                 ]}
               >
-                Tugas Saya ({bounties.filter(b => b.creatorId === currentUser?.id || b.runnerId === currentUser?.id).length})
+                Tugas Saya (
+                {
+                  bounties.filter(
+                    b =>
+                      b.creatorId === currentUser?.id ||
+                      b.runnerId === currentUser?.id,
+                  ).length
+                }
+                )
               </Text>
             </TouchableOpacity>
           </View>
@@ -748,20 +746,43 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.emptyBountyIconWrap}>
                 <Coins size={22} color="#D97706" />
               </View>
-              <Text style={styles.emptyBountyTitle}>Belum Ada Bounty Aktif</Text>
+              <Text style={styles.emptyBountyTitle}>
+                Belum Ada Bounty Aktif
+              </Text>
               <Text style={styles.emptyBountySub}>
-                Lagi butuh sesuatu mendesak atau mager keluar? Pasang bounty sekarang & beri tip untuk temanmu!
+                Lagi butuh sesuatu mendesak atau mager keluar? Pasang bounty
+                sekarang & beri tip untuk temanmu!
               </Text>
               <TouchableOpacity
                 style={styles.emptyBountyAction}
                 onPress={() => setIsCreateBountyVisible(true)}
               >
                 <Plus size={14} color="#4F46E5" />
-                <Text style={styles.emptyBountyActionText}>Pasang Bounty Baru</Text>
+                <Text style={styles.emptyBountyActionText}>
+                  Pasang Bounty Baru
+                </Text>
               </TouchableOpacity>
             </View>
+          ) : filteredBounties.length === 1 ? (
+            <BountyCard
+              key={filteredBounties[0].id}
+              bounty={filteredBounties[0]}
+              currentUser={currentUser}
+              onPress={() => setSelectedBounty(filteredBounties[0])}
+              onClaim={async b => {
+                await claimBounty(b.id);
+              }}
+              onAction={b => setSelectedBounty(b)}
+            />
           ) : (
-            <View style={styles.bountyListWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToInterval={CARD_WIDTH + 14}
+              snapToAlignment="start"
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
               {filteredBounties.map(bounty => (
                 <BountyCard
                   key={bounty.id}
@@ -772,9 +793,10 @@ export const HomeScreen: React.FC = () => {
                     await claimBounty(b.id);
                   }}
                   onAction={b => setSelectedBounty(b)}
+                  style={styles.bountyCardCarousel}
                 />
               ))}
-            </View>
+            </ScrollView>
           )}
 
           {/* My Sirkel Section */}
@@ -1747,14 +1769,6 @@ const getStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
-    bountyCounterBadge: {
-      backgroundColor: '#FEF3C7',
-    },
-    bountyCounterText: {
-      fontSize: 11,
-      fontWeight: '800',
-      color: '#D97706',
-    },
     postBountyBtn: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1799,6 +1813,11 @@ const getStyles = (colors: ThemeColors) =>
     },
     bountyListWrap: {
       marginBottom: 16,
+    },
+    bountyCardCarousel: {
+      width: CARD_WIDTH,
+      marginRight: 12,
+      marginBottom: 6,
     },
     emptyBountyCard: {
       alignItems: 'center',

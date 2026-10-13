@@ -1,5 +1,15 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
+export type MainTabParamList = {
+  Home: undefined;
+  BountyBoard: undefined;
+  History: undefined;
+  Settings: undefined;
+};
+
 export type RootStackParamList = {
   Auth: undefined;
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   Home: undefined;
   CircleDetail: { circleId: number; circleName: string };
   CreateCircle: undefined;

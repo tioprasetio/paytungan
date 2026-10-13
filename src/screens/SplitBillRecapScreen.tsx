@@ -528,13 +528,22 @@ export const SplitBillRecapScreen: React.FC = () => {
                   bill={userBill}
                   isBuyer={canEditPayment}
                   isCurrentUser={userBill.userId === currentUser?.id}
-                  onToggleUserPaid={() =>
-                    canEditPayment &&
-                    toggleUserPaymentBatch(
-                      userBill.userId,
-                      userBill.is_all_paid,
-                    )
-                  }
+                  onToggleUserPaid={async () => {
+                    if (!canEditPayment) return;
+                    try {
+                      await toggleUserPaymentBatch(
+                        userBill.userId,
+                        userBill.is_all_paid,
+                      );
+                    } catch (err: unknown) {
+                      showError(
+                        'Gagal Mengubah Status',
+                        err instanceof Error
+                          ? err.message
+                          : 'Terjadi kesalahan sistem saat menghubungi server.',
+                      );
+                    }
+                  }}
                   onToggleItemPaid={(itemId, curr) =>
                     canEditPayment && toggleItemPayment(itemId, curr)
                   }
@@ -560,6 +569,7 @@ export const SplitBillRecapScreen: React.FC = () => {
             visible={proofModalVisible}
             onClose={() => setProofModalVisible(false)}
             mode={proofModalMode}
+            isBuyer={isBuyer}
             sessionId={sessionId}
             currentUserId={currentUser?.id || 0}
             buyerName={recap.buyer.nama}

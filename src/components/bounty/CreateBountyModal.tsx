@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useThemeColors, ThemeColors } from '../../theme/colors';
 import { Circle } from '../../types';
-import { X, Coins, Sparkles, MapPin, Home, ShoppingBag, Check } from 'lucide-react-native';
+import { X, Coins, Sparkles } from 'lucide-react-native';
 import { useAlert } from '../../context/AlertContext';
 
 interface CreateBountyModalProps {
@@ -46,7 +46,7 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
   const { showAlert } = useAlert();
 
   const [selectedCircleId, setSelectedCircleId] = useState<number>(
-    defaultCircleId || (circles[0]?.id ?? 0)
+    defaultCircleId || (circles[0]?.id ?? 0),
   );
   const [judul, setJudul] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
@@ -65,7 +65,7 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
     } else if (circles.length > 0 && !selectedCircleId) {
       setSelectedCircleId(circles[0].id);
     }
-  }, [defaultCircleId, circles]);
+  }, [defaultCircleId, circles, selectedCircleId]);
 
   const handleSelectPreset = (reward: number) => {
     setIsCustomReward(false);
@@ -101,7 +101,9 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
       return;
     }
 
-    const tip = isCustomReward ? parseInt(customReward || '0', 10) : imbalanBounty;
+    const tip = isCustomReward
+      ? parseInt(customReward || '0', 10)
+      : imbalanBounty;
     if (tip < 1000) {
       showAlert({
         title: 'Imbalan Tidak Valid',
@@ -118,7 +120,9 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
         judul: judul.trim(),
         deskripsi: deskripsi.trim() || undefined,
         imbalan_bounty: tip,
-        estimasi_harga: estimasiHarga ? parseInt(estimasiHarga.replace(/\D/g, ''), 10) : undefined,
+        estimasi_harga: estimasiHarga
+          ? parseInt(estimasiHarga.replace(/\D/g, ''), 10)
+          : undefined,
         lokasi_beli: lokasiBeli.trim() || undefined,
         lokasi_tujuan: lokasiTujuan.trim() || undefined,
       });
@@ -142,7 +146,12 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -154,22 +163,39 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
               <View style={styles.headerIcon}>
                 <Coins size={20} color="#D97706" />
               </View>
-              <View>
+              <View style={styles.headerTextContainer}>
                 <Text style={styles.title}>Pasang Bounty Baru</Text>
-                <Text style={styles.subtitle}>Tawarkan imbalan untuk teman sirkel yang bisa bantu</Text>
+                <Text
+                  style={styles.subtitle}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Berikan imbalan untuk teman sirkel yang bisa bantu
+                </Text>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <X size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scrollArea}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Circle Selector if not fixed */}
             {!defaultCircleId && circles.length > 1 && (
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Pilih Sirkel</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.chipsScroll}
+                >
                   {circles.map(circle => (
                     <TouchableOpacity
                       key={circle.id}
@@ -182,7 +208,8 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
                       <Text
                         style={[
                           styles.chipText,
-                          selectedCircleId === circle.id && styles.chipTextActive,
+                          selectedCircleId === circle.id &&
+                            styles.chipTextActive,
                         ]}
                       >
                         {circle.nama_sirkel}
@@ -211,10 +238,15 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
             <View style={styles.formGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>
-                  Imbalan/Ongkir untuk Runner <Text style={styles.required}>*</Text>
+                  Imbalan/Ongkir untuk Runner{' '}
+                  <Text style={styles.required}>*</Text>
                 </Text>
                 <Text style={styles.rewardHighlight}>
-                  Rp {(isCustomReward ? parseInt(customReward || '0', 10) : imbalanBounty).toLocaleString('id-ID')}
+                  Rp{' '}
+                  {(isCustomReward
+                    ? parseInt(customReward || '0', 10)
+                    : imbalanBounty
+                  ).toLocaleString('id-ID')}
                 </Text>
               </View>
 
@@ -225,14 +257,18 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
                     key={val}
                     style={[
                       styles.presetChip,
-                      !isCustomReward && imbalanBounty === val && styles.presetChipActive,
+                      !isCustomReward &&
+                        imbalanBounty === val &&
+                        styles.presetChipActive,
                     ]}
                     onPress={() => handleSelectPreset(val)}
                   >
                     <Text
                       style={[
                         styles.presetChipText,
-                        !isCustomReward && imbalanBounty === val && styles.presetChipTextActive,
+                        !isCustomReward &&
+                          imbalanBounty === val &&
+                          styles.presetChipTextActive,
                       ]}
                     >
                       {val / 1000}rb
@@ -254,7 +290,9 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
 
             {/* Estimasi Biaya Belanjaan */}
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Estimasi Harga Belanja (Opsional)</Text>
+              <Text style={styles.label}>
+                Estimasi Harga Belanja (Opsional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Cth: 25000 (untuk ditalangi runner dulu)"
@@ -267,7 +305,9 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
 
             {/* Toko / Lokasi Beli */}
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Lokasi Toko / Pembelian (Opsional)</Text>
+              <Text style={styles.label}>
+                Lokasi Toko / Pembelian (Opsional)
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Cth: Apotek K24, Indomaret, atau Bebas"
@@ -319,7 +359,9 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({
               ) : (
                 <>
                   <Sparkles size={18} color="#FFF" />
-                  <Text style={styles.submitBtnText}>Pasang Bounty Sekarang 🚀</Text>
+                  <Text style={styles.submitBtnText}>
+                    Pasang Bounty Sekarang
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -353,11 +395,15 @@ const getStyles = (colors: ThemeColors) =>
       paddingBottom: 14,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      gap: 12,
     },
     headerTitleContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      flex: 1,
+    },
+    headerTextContainer: {
       flex: 1,
     },
     headerIcon: {
@@ -367,6 +413,7 @@ const getStyles = (colors: ThemeColors) =>
       backgroundColor: '#FEF3C7',
       justifyContent: 'center',
       alignItems: 'center',
+      flexShrink: 0,
     },
     title: {
       fontSize: 17,
@@ -376,9 +423,15 @@ const getStyles = (colors: ThemeColors) =>
     subtitle: {
       fontSize: 12,
       color: colors.textSecondary,
+      marginTop: 2,
     },
     closeBtn: {
-      padding: 6,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexShrink: 0,
     },
     scrollArea: {
       marginTop: 14,

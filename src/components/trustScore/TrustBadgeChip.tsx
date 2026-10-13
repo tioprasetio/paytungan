@@ -20,6 +20,26 @@ interface TrustBadgeChipProps {
   size?: 'sm' | 'md';
 }
 
+const getBadgeIcon = (code?: string) => {
+  switch (code) {
+    case 'MASTER':
+      return Crown;
+    case 'SATSET':
+      return Zap;
+    case 'SULTAN':
+      return Sparkles;
+    case 'AMANAH':
+    case 'ANDAL':
+      return ShieldCheck;
+    case 'NGARET':
+      return AlertTriangle;
+    case 'SANTAI':
+      return Coffee;
+    default:
+      return Award;
+  }
+};
+
 export const TrustBadgeChip: React.FC<TrustBadgeChipProps> = ({
   trustScore,
   badge: customBadge,
@@ -36,7 +56,8 @@ export const TrustBadgeChip: React.FC<TrustBadgeChipProps> = ({
     if (type === 'buyer') return trustScore.buyerBadge;
     // Auto: prioritize warning if ngaret, else runner master, else buyer
     if (trustScore.isNgaret) return trustScore.buyerBadge;
-    if (trustScore.runnerBadge.level === 'MASTER') return trustScore.runnerBadge;
+    if (trustScore.runnerBadge.level === 'MASTER')
+      return trustScore.runnerBadge;
     return trustScore.buyerBadge;
   }, [customBadge, trustScore, type]);
 
@@ -44,26 +65,7 @@ export const TrustBadgeChip: React.FC<TrustBadgeChipProps> = ({
 
   const isWarning = badge.level === 'WARNING';
   const isMaster = badge.level === 'MASTER';
-
-  const IconComponent = useMemo(() => {
-    switch (badge.badgeCode) {
-      case 'MASTER':
-        return Crown;
-      case 'SATSET':
-        return Zap;
-      case 'SULTAN':
-        return Sparkles;
-      case 'AMANAH':
-      case 'ANDAL':
-        return ShieldCheck;
-      case 'NGARET':
-        return AlertTriangle;
-      case 'SANTAI':
-        return Coffee;
-      default:
-        return Award;
-    }
-  }, [badge.badgeCode]);
+  const IconComponent = getBadgeIcon(badge.badgeCode);
 
   const scoreDisplay = trustScore?.overallScore ?? trustScore?.buyerScore;
 
@@ -73,15 +75,15 @@ export const TrustBadgeChip: React.FC<TrustBadgeChipProps> = ({
         styles.container,
         size === 'sm' ? styles.containerSm : styles.containerMd,
         {
-          borderColor: isWarning ? '#FCA5A5' : isMaster ? '#FDE68A' : badge.color + '40',
-          backgroundColor: isWarning ? '#FEF2F2' : isMaster ? '#FFFBEB' : badge.color + '12',
+          borderColor: isWarning
+            ? '#FCA5A5'
+            : isMaster
+            ? '#FDE68A'
+            : badge.color + '40',
         },
       ]}
     >
-      <IconComponent
-        size={size === 'sm' ? 11 : 13}
-        color={badge.color}
-      />
+      <IconComponent size={size === 'sm' ? 11 : 13} color={badge.color} />
       <Text
         style={[
           styles.titleText,
@@ -95,10 +97,7 @@ export const TrustBadgeChip: React.FC<TrustBadgeChipProps> = ({
 
       {showScore && scoreDisplay !== undefined && (
         <View
-          style={[
-            styles.scorePill,
-            { backgroundColor: badge.color + '20' },
-          ]}
+          style={[styles.scorePill, { backgroundColor: badge.color + '20' }]}
         >
           <Text style={[styles.scoreText, { color: badge.color }]}>
             {scoreDisplay}
@@ -125,16 +124,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     borderRadius: 20,
-    borderWidth: 1,
     alignSelf: 'flex-start',
   },
   containerSm: {
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   containerMd: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   titleText: {
     fontWeight: '700',

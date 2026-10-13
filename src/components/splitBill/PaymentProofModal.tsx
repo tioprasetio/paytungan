@@ -27,6 +27,7 @@ import {
   Image as ImageIcon,
   RotateCw,
   Clock,
+  AlertCircle,
 } from 'lucide-react-native';
 
 // Sample modern transfer receipt base64 placeholder for simulation/testing
@@ -200,6 +201,7 @@ interface PaymentProofModalProps {
   onClose: () => void;
   // Mode: 'UPLOAD' (penitip uploads proof) or 'REVIEW' (runner views & verifies proof)
   mode: 'UPLOAD' | 'REVIEW';
+  isBuyer?: boolean;
   // Context info
   sessionId: number;
   currentUserId: number;
@@ -219,6 +221,7 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
   visible,
   onClose,
   mode,
+  isBuyer = false,
   buyerName,
   bankName,
   bankAccount,
@@ -332,10 +335,12 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
         await onUploadSubmit(catatan.trim(), selectedImage);
       }
       onClose();
-      showSuccess(
-        'Bukti Terkirim',
-        'Bukti transfer berhasil dikirim ke Runner untuk diverifikasi.',
-      );
+      setTimeout(() => {
+        showSuccess(
+          'Bukti Terkirim',
+          'Bukti transfer berhasil dikirim ke Runner untuk diverifikasi.',
+        );
+      }, 350);
     } catch (err: unknown) {
       showError(
         'Gagal Mengunggah',
@@ -353,10 +358,12 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       setIsSubmitting(true);
       await onConfirmApprove(targetUserBill.userId);
       onClose();
-      showSuccess(
-        'Pembayaran Lunas',
-        `Pembayaran ${targetUserBill.nama} berhasil disetujui.`,
-      );
+      setTimeout(() => {
+        showSuccess(
+          'Pembayaran Lunas',
+          `Pembayaran ${targetUserBill.nama} berhasil disetujui.`,
+        );
+      }, 350);
     } catch (err: unknown) {
       showError(
         'Gagal Menyetujui',
@@ -382,10 +389,12 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
       await onConfirmReject(targetUserBill.userId, alasanTolak.trim());
       setIsRejecting(false);
       onClose();
-      showSuccess(
-        'Bukti Ditolak',
-        `Bukti pembayaran ${targetUserBill.nama} telah ditolak.`,
-      );
+      setTimeout(() => {
+        showSuccess(
+          'Bukti Ditolak',
+          `Bukti pembayaran ${targetUserBill.nama} telah ditolak.`,
+        );
+      }, 350);
     } catch (err: unknown) {
       showError(
         'Gagal Menolak',
@@ -753,37 +762,97 @@ export const PaymentProofModal: React.FC<PaymentProofModalProps> = ({
                   <Text style={styles.closeFooterBtnText}>Tutup</Text>
                 </TouchableOpacity>
               </View>
-            ) : !isRejecting ? (
-              <View style={styles.reviewButtonRow}>
-                <TouchableOpacity
-                  style={styles.rejectBtn}
-                  onPress={() => setIsRejecting(true)}
-                  disabled={isSubmitting}
-                  activeOpacity={0.8}
-                >
-                  <XCircle size={18} color={colors.danger} />
-                  <Text style={styles.rejectBtnText}>Tolak Bukti</Text>
-                </TouchableOpacity>
+            ) : isBuyer ? (
+              !isRejecting ? (
+                <View style={styles.reviewButtonRow}>
+                  <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={() => setIsRejecting(true)}
+                    disabled={isSubmitting}
+                    activeOpacity={0.8}
+                  >
+                    <XCircle size={18} color={colors.danger} />
+                    <Text style={styles.rejectBtnText}>Tolak Bukti</Text>
+                  </TouchableOpacity>
 
+                  <TouchableOpacity
+                    style={styles.approveBtn}
+                    onPress={handleApprove}
+                    disabled={isSubmitting}
+                    activeOpacity={0.8}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <CheckCircle2 size={18} color="#FFFFFF" />
+                        <Text style={styles.approveBtnText}>
+                          Konfirmasi Lunas
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ) : null
+            ) : (
+              <View style={styles.approvedFooterContainer}>
+                <View
+                  style={[
+                    styles.approvedBanner,
+                    proof?.status === 'REJECTED'
+                      ? { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }
+                      : { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' },
+                  ]}
+                >
+                  {proof?.status === 'REJECTED' ? (
+                    <AlertCircle size={20} color="#DC2626" />
+                  ) : (
+                    <Clock size={20} color="#D97706" />
+                  )}
+                  <View style={styles.approvedBannerTexts}>
+                    <Text
+                      style={[
+                        styles.approvedBannerTitle,
+                        {
+                          color:
+                            proof?.status === 'REJECTED'
+                              ? '#991B1B'
+                              : '#92400E',
+                        },
+                      ]}
+                    >
+                      {proof?.status === 'REJECTED'
+                        ? 'Bukti Ditolak oleh Runner'
+                        : 'Menunggu Verifikasi Runner'}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.approvedBannerSub,
+                        {
+                          color:
+                            proof?.status === 'REJECTED'
+                              ? '#B91C1C'
+                              : '#B45309',
+                        },
+                      ]}
+                    >
+                      {proof?.status === 'REJECTED'
+                        ? proof?.alasan_tolak
+                          ? `Alasan: ${proof.alasan_tolak}`
+                          : 'Silakan kirim ulang bukti transfer baru.'
+                        : `Runner (${buyerName}) sedang mengecek bukti transfermu.`}
+                    </Text>
+                  </View>
+                </View>
                 <TouchableOpacity
-                  style={styles.approveBtn}
-                  onPress={handleApprove}
-                  disabled={isSubmitting}
+                  style={styles.closeFooterBtn}
+                  onPress={onClose}
                   activeOpacity={0.8}
                 >
-                  {isSubmitting ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <CheckCircle2 size={18} color="#FFFFFF" />
-                      <Text style={styles.approveBtnText}>
-                        Konfirmasi Lunas
-                      </Text>
-                    </>
-                  )}
+                  <Text style={styles.closeFooterBtnText}>Tutup</Text>
                 </TouchableOpacity>
               </View>
-            ) : null}
+            )}
           </View>
         </View>
       </View>

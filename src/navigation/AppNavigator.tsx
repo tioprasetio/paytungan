@@ -9,7 +9,6 @@ import { useThemeColors } from '../theme/colors';
 // Screens
 import {
   AuthScreen,
-  HomeScreen,
   CircleDetailScreen,
   CreateCircleModal,
   JoinCircleModal,
@@ -17,16 +16,15 @@ import {
   JastipSessionScreen,
   InputPricesScreen,
   SplitBillRecapScreen,
-  SettingsScreen,
   EditProfileScreen,
   PaymentSettingsScreen,
   SecuritySettingsScreen,
   MyCirclesScreen,
   SplashScreen,
-  HistoryScreen,
   ActiveSessionsScreen,
-  BountyBoardScreen,
 } from '../screens';
+
+import { MainTabNavigator } from './MainTabNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -87,7 +85,7 @@ export const AppNavigator: React.FC = () => {
           <Stack.Screen name="Auth" component={AuthScreen} />
         ) : (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
             <Stack.Screen name="CircleDetail" component={CircleDetailScreen} />
             <Stack.Screen
               name="CreateCircle"
@@ -103,14 +101,11 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen name="JastipSession" component={JastipSessionScreen} />
             <Stack.Screen name="InputPrices" component={InputPricesScreen} />
             <Stack.Screen name="SplitBillRecap" component={SplitBillRecapScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="PaymentSettings" component={PaymentSettingsScreen} />
             <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
             <Stack.Screen name="MyCircles" component={MyCirclesScreen} />
-            <Stack.Screen name="History" component={HistoryScreen} />
             <Stack.Screen name="ActiveSessions" component={ActiveSessionsScreen} />
-            <Stack.Screen name="BountyBoard" component={BountyBoardScreen} />
           </>
         )}
       </Stack.Navigator>

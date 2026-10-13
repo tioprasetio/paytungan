@@ -14,12 +14,13 @@
     "iOSClean": "cd ios && rm -rf Pods/ Podfile.lock && pod install && cd ..",
     "cleanAll": "npm run androidClean && npm run iOSClean",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix", 
+    "lint:fix": "eslint . --fix",
     "test": "jest"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native/new-app-screen": "0.87.1",
+    "@react-navigation/bottom-tabs": "^7.20.0",
     "@react-navigation/native": "^7.3.18",
     "@react-navigation/native-stack": "^7.18.10",
     "axios": "^1.20.0",

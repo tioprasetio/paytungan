@@ -1,8 +1,15 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Bounty, User } from '../../types';
 import { useThemeColors, ThemeColors } from '../../theme/colors';
-import { Badge } from '../common';
 import {
   Coins,
   MapPin,
@@ -23,6 +30,7 @@ interface BountyCardProps {
   onPress?: () => void;
   onClaim?: (bounty: Bounty) => void;
   onAction?: (bounty: Bounty) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const BountyCard: React.FC<BountyCardProps> = ({
@@ -31,6 +39,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
   onPress,
   onClaim,
   onAction,
+  style,
 }) => {
   const colors = useThemeColors();
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -97,7 +106,9 @@ export const BountyCard: React.FC<BountyCardProps> = ({
     let cleanPhone = targetUser.no_whatsapp.replace(/\D/g, '');
     if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
     const msg = `Halo ${targetUser.nama}, mengenai Bounty "${bounty.judul}" di PayTungan...`;
-    Linking.openURL(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`);
+    Linking.openURL(
+      `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`,
+    );
   };
 
   const StatusIcon = statusConfig.icon;
@@ -106,14 +117,17 @@ export const BountyCard: React.FC<BountyCardProps> = ({
     <TouchableOpacity
       activeOpacity={0.88}
       onPress={onPress}
-      style={styles.card}
+      style={[styles.card, style]}
     >
       {/* Header Row: Status Badge & Reward Badge */}
       <View style={styles.headerRow}>
         <View
           style={[
             styles.statusBadge,
-            { backgroundColor: statusConfig.bg, borderColor: statusConfig.border },
+            {
+              backgroundColor: statusConfig.bg,
+              borderColor: statusConfig.border,
+            },
           ]}
         >
           <StatusIcon size={12} color={statusConfig.color} />
@@ -123,7 +137,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
         </View>
 
         <View style={styles.rewardBadge}>
-          <Coins size={14} color="#D97706" />
+          <Coins size={14} color={colors.success} />
           <Text style={styles.rewardText}>
             +Rp {bounty.imbalan_bounty.toLocaleString('id-ID')}
           </Text>
@@ -176,7 +190,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           <View style={styles.userAvatar}>
             <UserIcon size={13} color="#4F46E5" />
           </View>
-          <View>
+          <View style={styles.userText}>
             <Text style={styles.userName} numberOfLines={1}>
               {bounty.creator?.nama || 'Member Sirkel'}
               {isCreator ? ' (Anda)' : ''}
@@ -210,28 +224,37 @@ export const BountyCard: React.FC<BountyCardProps> = ({
             <Text style={styles.actionButtonText}>Input Struk</Text>
           </TouchableOpacity>
         )}
-
-        {bounty.status === 'BOUGHT' && isCreator && onAction && (
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: '#10B981' }]}
-            onPress={() => onAction(bounty)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.actionButtonText}>Bayar & Terima</Text>
-          </TouchableOpacity>
-        )}
-
         {/* WhatsApp Button when in progress */}
-        {['TAKEN', 'BOUGHT'].includes(bounty.status) && (isCreator || isRunner) && (
-          <TouchableOpacity
-            style={styles.waButton}
-            onPress={handleWhatsAppChat}
-            activeOpacity={0.7}
-          >
-            <MessageCircle size={15} color="#16A34A" />
-          </TouchableOpacity>
-        )}
+        {['TAKEN', 'BOUGHT'].includes(bounty.status) &&
+          (isCreator || isRunner) && (
+            <TouchableOpacity
+              style={styles.waButton}
+              onPress={handleWhatsAppChat}
+              activeOpacity={0.7}
+            >
+              <MessageCircle size={15} color={colors.success} />
+            </TouchableOpacity>
+          )}
       </View>
+      {bounty.status === 'BOUGHT' && isCreator && onAction && (
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            { backgroundColor: '#10B981', marginTop: 8 },
+          ]}
+          onPress={() => onAction(bounty)}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.actionButtonText,
+              { fontSize: 12, textAlign: 'center' },
+            ]}
+          >
+            Bayar & Terima
+          </Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 };
@@ -275,17 +298,17 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: '#FEF3C7',
+      backgroundColor: colors.successLight,
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: '#FDE68A',
+      borderColor: colors.successLight,
     },
     rewardText: {
       fontSize: 12,
       fontWeight: '800',
-      color: '#B45309',
+      color: colors.success,
     },
     title: {
       fontSize: 16,
@@ -336,6 +359,11 @@ const getStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
+    userText: {
+      flex: 1,
+      flexDirection: 'column',
+      gap: 4,
+    },
     userName: {
       fontSize: 12,
       fontWeight: '600',
@@ -343,7 +371,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     runnerText: {
       fontSize: 10,
-      color: '#4F46E5',
+      color: colors.textSecondary,
       fontWeight: '500',
     },
     claimButton: {
@@ -362,9 +390,10 @@ const getStyles = (colors: ThemeColors) =>
     },
     actionButton: {
       backgroundColor: '#4F46E5',
-      paddingHorizontal: 12,
-      paddingVertical: 7,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: 10,
+      marginTop: 5,
     },
     actionButtonText: {
       color: '#FFF',
@@ -372,7 +401,7 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '700',
     },
     waButton: {
-      backgroundColor: '#DCFCE7',
+      backgroundColor: colors.successLight,
       width: 32,
       height: 32,
       borderRadius: 16,

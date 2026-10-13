@@ -15,13 +15,9 @@ import {
   ShieldCheck,
   Crown,
   Sparkles,
-  Zap,
   AlertTriangle,
   ShoppingBag,
   Receipt,
-  Coins,
-  CheckCircle2,
-  TrendingUp,
   Info,
 } from 'lucide-react-native';
 
@@ -41,20 +37,23 @@ export const TrustScoreModal: React.FC<TrustScoreModalProps> = ({
 
   if (!trustScore) return null;
 
-  const scoreColor = useMemo(() => {
-    if (trustScore.isNgaret) return '#EF4444';
-    if (trustScore.overallScore >= 90) return '#10B981';
-    if (trustScore.overallScore >= 75) return '#4F46E5';
-    if (trustScore.overallScore >= 60) return '#F59E0B';
-    return '#6B7280';
-  }, [trustScore]);
+  const scoreColor = trustScore.isNgaret
+    ? '#EF4444'
+    : trustScore.overallScore >= 90
+    ? '#10B981'
+    : trustScore.overallScore >= 75
+    ? '#4F46E5'
+    : trustScore.overallScore >= 60
+    ? '#F59E0B'
+    : '#6B7280';
 
-  const scoreVerdict = useMemo(() => {
-    if (trustScore.isNgaret) return 'Perlu Perbaikan Segera';
-    if (trustScore.overallScore >= 90) return 'Sangat Terpercaya 🌟';
-    if (trustScore.overallScore >= 75) return 'Amanah & Tertib 👍';
-    return 'Warga Standar Sirkel ☕';
-  }, [trustScore]);
+  const scoreVerdict = trustScore.isNgaret
+    ? 'Perlu Perbaikan Segera'
+    : trustScore.overallScore >= 90
+    ? 'Sangat Terpercaya 🌟'
+    : trustScore.overallScore >= 75
+    ? 'Amanah & Tertib 👍'
+    : 'Warga Standar Sirkel ☕';
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -66,14 +65,18 @@ export const TrustScoreModal: React.FC<TrustScoreModalProps> = ({
               <View style={[styles.headerIconWrap, { backgroundColor: scoreColor + '18' }]}>
                 <ShieldCheck size={20} color={scoreColor} />
               </View>
-              <View>
+              <View style={styles.headerTextWrap}>
                 <Text style={styles.title}>Rapor Tongkrongan</Text>
-                <Text style={styles.subtitle}>
+                <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
                   Reputasi & Skor Kepercayaan {trustScore.nama}
                 </Text>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <X size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -292,11 +295,15 @@ const getStyles = (colors: ThemeColors) =>
       paddingBottom: 14,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      gap: 12,
     },
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      flex: 1,
+    },
+    headerTextWrap: {
       flex: 1,
     },
     headerIconWrap: {
@@ -305,6 +312,7 @@ const getStyles = (colors: ThemeColors) =>
       borderRadius: 20,
       justifyContent: 'center',
       alignItems: 'center',
+      flexShrink: 0,
     },
     title: {
       fontSize: 17,
@@ -314,9 +322,15 @@ const getStyles = (colors: ThemeColors) =>
     subtitle: {
       fontSize: 12,
       color: colors.textSecondary,
+      marginTop: 2,
     },
     closeBtn: {
-      padding: 6,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexShrink: 0,
     },
     scrollArea: {
       marginTop: 14,
